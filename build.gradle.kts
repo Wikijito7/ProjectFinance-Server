@@ -3,6 +3,7 @@ val kotlin_version: String by project
 val logback_version: String by project
 val kmongo_version: String by project
 val koin_version: String by project
+val firebase_version: String by project
 
 plugins {
     application
@@ -15,6 +16,7 @@ version = "1.0"
 
 application {
     mainClass.set("es.wokis.ApplicationKt")
+    mainClassName = "es.wokis.ApplicationKt"
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -47,6 +49,12 @@ dependencies {
     // Koin
     implementation("io.insert-koin:koin-ktor:$koin_version")
     implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
+
+    // Firebase
+    implementation("com.google.firebase:firebase-admin:$firebase_version")
+
+    // BCrypt
+    implementation("org.mindrot:jbcrypt:0.4")
 }
 
 ktor {
