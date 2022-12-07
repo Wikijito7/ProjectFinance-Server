@@ -1,14 +1,12 @@
 package es.wokis.data.repository.user
 
-import com.google.firebase.auth.hash.Bcrypt
 import es.wokis.data.bo.user.UserBO
-import es.wokis.data.datasource.UserLocalDataSource
+import es.wokis.data.datasource.user.UserLocalDataSource
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
 import es.wokis.data.mapper.user.toBO
 import es.wokis.plugins.makeToken
 import org.mindrot.jbcrypt.BCrypt
-import kotlin.math.log
 
 interface UserRepository {
     suspend fun login(login: LoginDTO): String?
@@ -20,7 +18,6 @@ interface UserRepository {
 }
 
 class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
-
     override suspend fun login(login: LoginDTO): String? {
         val user = userLocalDataSource.getUserByUsernameOrEmail(login.username)
         return user?.let {
@@ -60,9 +57,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         userLocalDataSource.getUserByUsername(it)
     }
 
-
     override suspend fun getUserByEmail(email: String?): UserBO? = email?.let {
         userLocalDataSource.getUserByEmail(it)
     }
-
 }

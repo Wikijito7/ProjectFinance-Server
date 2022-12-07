@@ -34,7 +34,7 @@ fun UserBO.toDBO() = UserDBO(
     id = id?.let { ObjectId(it).toId() },
     username = username,
     email = email,
-    password = password.orEmpty(),
+    password = password,
     devices = devices
 )
 
