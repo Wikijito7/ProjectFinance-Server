@@ -3,12 +3,15 @@ package es.wokis.plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
+import com.google.firebase.auth.hash.Bcrypt
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.repository.user.UserRepository
+import es.wokis.utils.orGeneratePassword
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import org.koin.ktor.ext.inject
+import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 
 private lateinit var jwtIssuer: String
@@ -59,6 +62,6 @@ fun makeToken(user: UserBO): String =
         .withIssuer(jwtIssuer)
         .withAudience(jwtAudience)
         .withClaim("username", user.username)
-        .withClaim("password", user.password)
+        .withClaim("password", user.password.takeIf { it.isNotBlank() }.orGeneratePassword() )
         .withClaim("timestamp", Date().time)
         .sign(algorithm)

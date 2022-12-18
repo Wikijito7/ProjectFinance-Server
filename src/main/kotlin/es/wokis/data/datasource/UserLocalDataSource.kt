@@ -20,6 +20,7 @@ interface UserLocalDataSource {
     suspend fun getUserByUsernameOrEmail(username: String, email: String = EMPTY_TEXT): UserBO?
 
     suspend fun createUser(user: UserBO): Boolean
+    suspend fun updateUser(user: UserBO): Boolean
 }
 
 class UserLocalDataSourceImpl(private val userCollection: MongoCollection<UserDBO>) : UserLocalDataSource {
@@ -59,5 +60,10 @@ class UserLocalDataSourceImpl(private val userCollection: MongoCollection<UserDB
             println(e.stackTraceToString())
             false
         }
+    }
+
+    override suspend fun updateUser(user: UserBO): Boolean {
+        val bsonId: Id<UserDBO> = ObjectId(user.id).toId()
+        return userCollection.updateOne(UserDBO::id eq bsonId, user.toDBO()).wasAcknowledged()
     }
 }
