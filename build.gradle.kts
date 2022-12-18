@@ -16,7 +16,6 @@ version = "1.0"
 
 application {
     mainClass.set("es.wokis.ApplicationKt")
-    mainClassName = "es.wokis.ApplicationKt"
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -55,6 +54,13 @@ dependencies {
 
     // BCrypt
     implementation("org.mindrot:jbcrypt:0.4")
+
+    // Google auth
+    implementation("com.google.api-client:google-api-client:2.1.1")
+
+    // JavaMail
+    implementation("javax.mail:javax.mail-api:1.6.2")
+    implementation("com.sun.mail:javax.mail:1.6.2")
 }
 
 ktor {

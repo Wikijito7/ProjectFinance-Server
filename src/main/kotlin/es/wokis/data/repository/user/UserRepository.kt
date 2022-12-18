@@ -1,22 +1,30 @@
 package es.wokis.data.repository.user
 
-import com.google.firebase.auth.hash.Bcrypt
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
+import com.google.api.client.http.javanet.NetHttpTransport
+import com.google.api.client.json.gson.GsonFactory
 import es.wokis.data.bo.user.UserBO
+import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
 import es.wokis.data.datasource.UserLocalDataSource
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
 import es.wokis.data.mapper.user.toBO
+import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
+import es.wokis.utils.HashGenerator
+import es.wokis.utils.generatePassword
 import org.mindrot.jbcrypt.BCrypt
-import kotlin.math.log
 
 interface UserRepository {
     suspend fun login(login: LoginDTO): String?
+    suspend fun loginWithGoogle(googleToken: String): String?
     suspend fun register(register: RegisterDTO): String?
     suspend fun getUsers(): List<UserBO>
     suspend fun getUserById(id: String?): UserBO?
     suspend fun getUserByUsername(name: String?): UserBO?
     suspend fun getUserByEmail(email: String?): UserBO?
+    suspend fun updateUser(user: UserBO): Boolean
 }
 
 class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
@@ -30,6 +38,57 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
             } else {
                 null
             }
+        }
+    }
+
+    override suspend fun loginWithGoogle(googleToken: String): String? {
+        val verifier: GoogleIdTokenVerifier =
+            GoogleIdTokenVerifier.Builder(
+                NetHttpTransport(),
+                GsonFactory()
+            )
+                .setAudience(listOf(config.getString("google.clientId")))
+                .setIssuer("https://accounts.google.com")
+                .build()
+
+        return verifier.verify(googleToken)?.let {
+            val payload: GoogleIdToken.Payload = it.payload
+
+            // Print user identifier
+            val userId: String = payload.subject
+            println("User ID: $userId")
+
+            // Get profile information from payload
+            val email: String = payload.email
+            val imageUrl: String = (payload["picture"] as? String).orEmpty()
+            val locale: String = payload["locale"] as? String ?: DEFAULT_LANG
+            val username = email.split("@").firstOrNull() ?: HashGenerator.generateHash()
+            val user = getUserByEmail(email)
+            val token = if (user == null) {
+                val token = register(
+                    RegisterDTO(
+                        username = username,
+                        email = email,
+                        password = "",
+                        isGoogleAuth = true,
+                        lang = locale
+                    )
+                )
+                getUserByEmail(email)?.let { userNotNull ->
+                    updateUser(
+                        userNotNull.copy(
+                            image = imageUrl
+                        )
+                    )
+                }
+               token
+
+            } else {
+                login(
+                    LoginDTO(username = username, password = "", isGoogleAuth = true)
+                )
+            }
+            token
         }
     }
 
@@ -65,4 +124,5 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         userLocalDataSource.getUserByEmail(it)
     }
 
+    override suspend fun updateUser(user: UserBO): Boolean = userLocalDataSource.updateUser(user)
 }

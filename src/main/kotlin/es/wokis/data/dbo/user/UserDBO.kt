@@ -9,5 +9,7 @@ data class UserDBO(
     val username: String,
     val email: String,
     val password: String,
+    val lang: String,
+    val image: String = "",
     val devices: List<String> = emptyList()
 )
