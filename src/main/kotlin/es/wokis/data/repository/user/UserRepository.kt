@@ -6,6 +6,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
+import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.datasource.UserLocalDataSource
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
@@ -69,7 +70,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
                     RegisterDTO(
                         username = username,
                         email = email,
-                        password = "",
+                        password = EMPTY_TEXT,
                         isGoogleAuth = true,
                         lang = locale
                     )
@@ -85,7 +86,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
 
             } else {
                 login(
-                    LoginDTO(username = username, password = "", isGoogleAuth = true)
+                    LoginDTO(username = username, password = EMPTY_TEXT, isGoogleAuth = true)
                 )
             }
             token

@@ -1,11 +1,11 @@
 
 package es.wokis.utils
 
+import es.wokis.data.constants.ServerConstants
 import java.util.*
 import kotlin.streams.asSequence
 
-class HashGenerator {
-    companion object {
+object HashGenerator {
         /**
          * Genera un hash aleatorio con la longitud indicada.
          *
@@ -18,7 +18,6 @@ class HashGenerator {
             return Random().ints(length, 0, hashSource.length-1)
                 .asSequence()
                 .map(hashSource::get)
-                .joinToString("")
+                .joinToString(ServerConstants.EMPTY_TEXT)
         }
-    }
 }
