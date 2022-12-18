@@ -3,6 +3,7 @@ val kotlin_version: String by project
 val logback_version: String by project
 val kmongo_version: String by project
 val koin_version: String by project
+val firebase_version: String by project
 
 plugins {
     application
@@ -47,6 +48,19 @@ dependencies {
     // Koin
     implementation("io.insert-koin:koin-ktor:$koin_version")
     implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
+
+    // Firebase
+    implementation("com.google.firebase:firebase-admin:$firebase_version")
+
+    // BCrypt
+    implementation("org.mindrot:jbcrypt:0.4")
+
+    // Google auth
+    implementation("com.google.api-client:google-api-client:2.1.1")
+
+    // JavaMail
+    implementation("javax.mail:javax.mail-api:1.6.2")
+    implementation("com.sun.mail:javax.mail:1.6.2")
 }
 
 ktor {
