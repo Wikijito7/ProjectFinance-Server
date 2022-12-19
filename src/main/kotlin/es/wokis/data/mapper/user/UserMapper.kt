@@ -13,6 +13,7 @@ import org.mindrot.jbcrypt.BCrypt
 fun RegisterDTO.toBO() = UserBO(
     username = username,
     email = email,
+    lang = lang,
     password = BCrypt.hashpw(password, BCrypt.gensalt()),
 )
 
@@ -27,6 +28,7 @@ fun UserDTO.toBO() = UserBO(
     email = email,
     password = EMPTY_TEXT,
     image = image,
+    lang = lang,
     devices = devices
 )
 
@@ -35,6 +37,8 @@ fun UserBO.toDBO() = UserDBO(
     username = username,
     email = email,
     password = password,
+    lang = lang,
+    image = image,
     devices = devices
 )
 
@@ -43,6 +47,8 @@ fun UserDBO.toBO() = UserBO(
     username = username,
     email = email,
     password = password,
+    image = image,
+    lang = lang,
     devices = devices
 )
 
@@ -53,5 +59,6 @@ fun UserBO.toDTO() = UserDTO(
     username = username,
     email = email,
     image = image,
+    lang = lang,
     devices = devices
 )

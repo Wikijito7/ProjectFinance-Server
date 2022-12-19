@@ -7,5 +7,6 @@ data class UserDTO(
     val username: String,
     val email: String,
     val image: String = ServerConstants.EMPTY_TEXT,
+    val lang: String,
     val devices: List<String> = emptyList()
 )

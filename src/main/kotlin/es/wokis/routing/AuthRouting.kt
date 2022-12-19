@@ -35,4 +35,12 @@ fun Routing.setUpAuthRouting() {
             call.respond(HttpStatusCode.Conflict, "That user already exists")
         }
     }
+
+    post("/google-auth") {
+        val googleToken = call.receive<String>()
+        val token: String? = userRepository.loginWithGoogle(googleToken)
+        token?.let {
+            call.respond(HttpStatusCode.OK, it)
+        } ?: call.respond(HttpStatusCode.NotFound, "That user doesn't exists.")
+    }
 }
