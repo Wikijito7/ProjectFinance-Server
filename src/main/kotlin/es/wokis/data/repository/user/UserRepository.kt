@@ -7,14 +7,13 @@ import com.google.api.client.json.gson.GsonFactory
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
-import es.wokis.data.datasource.UserLocalDataSource
+import es.wokis.data.datasource.user.UserLocalDataSource
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
 import es.wokis.data.mapper.user.toBO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
 import es.wokis.utils.HashGenerator
-import es.wokis.utils.generatePassword
 import org.mindrot.jbcrypt.BCrypt
 
 interface UserRepository {
@@ -29,7 +28,6 @@ interface UserRepository {
 }
 
 class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
-
     override suspend fun login(login: LoginDTO): String? {
         val user = userLocalDataSource.getUserByUsernameOrEmail(login.username)
         return user?.let {
@@ -82,7 +80,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
                         )
                     )
                 }
-               token
+                token
 
             } else {
                 login(
@@ -119,7 +117,6 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
     override suspend fun getUserByUsername(name: String?): UserBO? = name?.let {
         userLocalDataSource.getUserByUsername(it)
     }
-
 
     override suspend fun getUserByEmail(email: String?): UserBO? = email?.let {
         userLocalDataSource.getUserByEmail(it)

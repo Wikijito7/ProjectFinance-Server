@@ -1,4 +1,4 @@
-package es.wokis.data.datasource
+package es.wokis.data.datasource.user
 
 import com.mongodb.client.MongoCollection
 import es.wokis.data.bo.user.UserBO
@@ -16,15 +16,12 @@ interface UserLocalDataSource {
     suspend fun getUserById(id: String): UserBO?
     suspend fun getUserByEmail(email: String): UserBO?
     suspend fun getUserByUsername(username: String): UserBO?
-
     suspend fun getUserByUsernameOrEmail(username: String, email: String = EMPTY_TEXT): UserBO?
-
     suspend fun createUser(user: UserBO): Boolean
     suspend fun updateUser(user: UserBO): Boolean
 }
 
 class UserLocalDataSourceImpl(private val userCollection: MongoCollection<UserDBO>) : UserLocalDataSource {
-
     private val getCaseInsensitive: (element: String) -> Pattern = {
         Pattern.compile(it, Pattern.CASE_INSENSITIVE)
     }
