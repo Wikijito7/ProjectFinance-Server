@@ -21,7 +21,7 @@ fun InvoiceDTO.toBO() = InvoiceBO(
     description = description,
     quantity = quantity,
     date = Date(date),
-    type = InvoiceType.valueOf(type.orEmpty()),
+    type = InvoiceType.getFromKey(type.orEmpty()),
     userId = userId.orEmpty(),
     category = category?.toBO(),
     reactions = reactions.toBO()
@@ -44,13 +44,13 @@ fun ReactionDTO.toBO() = ReactionBO(
 )
 
 fun InvoiceDBO.toBO() = InvoiceBO(
-    id = id?.toString(),
+    id = id.toString(),
     idApp = idApp,
     title = title,
     description = description,
     quantity = quantity,
     date = Date(date),
-    type = InvoiceType.valueOf(type.orEmpty()),
+    type = InvoiceType.getFromKey(type.orEmpty()),
     userId = userId.orEmpty(),
     category = category?.toBO(),
     reactions = reactions.toBO()
@@ -96,6 +96,35 @@ fun List<ReactionBO>?.toDBO() = this?.map { it.toDBO() }.orEmpty()
 fun List<InvoiceBO>?.toDBO(): List<InvoiceDBO> = this?.map { it.toDBO() }.orEmpty()
 
 fun ReactionBO.toDBO() = ReactionDBO(
+    id = id,
+    unicode = unicode
+)
+
+fun List<InvoiceBO>.toDTO(): List<InvoiceDTO> = this.map { it.toDTO() }
+
+fun InvoiceBO.toDTO() = InvoiceDTO(
+    id = id.toString(),
+    idApp = idApp,
+    title = title,
+    description = description,
+    quantity = quantity,
+    date = date.time,
+    type = type.key,
+    userId = userId,
+    category = category?.toDTO(),
+    reactions = reactions.toDTO()
+)
+
+fun CategoryBO.toDTO() = CategoryDTO(
+    id = id,
+    title = title,
+    color = color
+)
+
+@JvmName("reactionBOToDTO")
+fun List<ReactionBO>.toDTO(): List<ReactionDTO> = this.map { it.toDTO() }
+
+fun ReactionBO.toDTO() = ReactionDTO(
     id = id,
     unicode = unicode
 )

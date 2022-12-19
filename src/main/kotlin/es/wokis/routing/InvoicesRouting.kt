@@ -2,6 +2,7 @@ package es.wokis.routing
 
 import es.wokis.data.dto.invoice.InvoiceDTO
 import es.wokis.data.mapper.invoice.toBO
+import es.wokis.data.mapper.invoice.toDTO
 import es.wokis.data.repository.invoices.InvoiceRepository
 import es.wokis.utils.user
 import io.ktor.http.*
@@ -16,15 +17,15 @@ fun Routing.setUpInvoicesRouting() {
     val invoiceRepository by inject<InvoiceRepository>()
 
     authenticate {
-        get {
+        get("/invoices") {
             val user = call.user
             user?.id?.let {
                 val invoices = invoiceRepository.getInvoicesOfUser(it)
-                call.respond(HttpStatusCode.OK, invoices)
+                call.respond(HttpStatusCode.OK, invoices.toDTO())
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
 
-        post {
+        post("/invoices") {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
             user?.id?.let {
@@ -33,7 +34,7 @@ fun Routing.setUpInvoicesRouting() {
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
 
-        put {
+        put("/invoices") {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
             user?.id?.let {
@@ -42,7 +43,7 @@ fun Routing.setUpInvoicesRouting() {
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
 
-        delete {
+        delete("/invoices") {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
             user?.id?.let {
