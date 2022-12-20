@@ -45,9 +45,9 @@ fun Routing.setUpInvoicesRouting() {
 
         delete("/invoices") {
             val user = call.user
-            val invoices = call.receive<List<InvoiceDTO>>()
+            val invoicesIds = call.receive<List<String>>()
             user?.id?.let {
-                val userInvoices = invoiceRepository.deleteInvoices(it, invoices.toBO())
+                val userInvoices = invoiceRepository.deleteInvoices(it, invoicesIds)
                 call.respond(HttpStatusCode.OK, userInvoices)
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }

@@ -65,7 +65,7 @@ dependencies {
 
 ktor {
     fatJar {
-        archiveFileName.set("fat.jar")
+        archiveFileName.set("${rootProject.name}-${rootProject.version}.jar")
     }
 
     docker {
