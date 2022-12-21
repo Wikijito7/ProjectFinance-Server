@@ -7,7 +7,7 @@ interface InvoiceRepository {
     suspend fun getInvoicesOfUser(id: String): List<InvoiceBO>
     suspend fun addInvoices(id: String, invoices: List<InvoiceBO>): Boolean
     suspend fun updateInvoices(id: String, invoices: List<InvoiceBO>): Boolean
-    suspend fun deleteInvoices(id: String, invoices: List<InvoiceBO>): Boolean
+    suspend fun deleteInvoices(id: String, invoicesIds: List<String>): Boolean
 }
 
 class InvoiceRepositoryImpl(private val invoiceLocalDataSource: InvoiceLocalDataSource) : InvoiceRepository {
@@ -20,6 +20,6 @@ class InvoiceRepositoryImpl(private val invoiceLocalDataSource: InvoiceLocalData
     override suspend fun updateInvoices(id: String, invoices: List<InvoiceBO>): Boolean =
         invoiceLocalDataSource.updateInvoices(id, invoices)
 
-    override suspend fun deleteInvoices(id: String, invoices: List<InvoiceBO>): Boolean =
-        invoiceLocalDataSource.deleteInvoices(id, invoices)
+    override suspend fun deleteInvoices(id: String, invoicesIds: List<String>): Boolean =
+        invoiceLocalDataSource.deleteInvoices(id, invoicesIds)
 }
