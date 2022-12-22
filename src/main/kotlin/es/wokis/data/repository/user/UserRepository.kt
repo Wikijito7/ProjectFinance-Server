@@ -8,6 +8,7 @@ import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.datasource.user.UserLocalDataSource
+import es.wokis.data.dto.user.auth.GoogleAuthDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
 import es.wokis.data.mapper.user.toBO
@@ -18,7 +19,7 @@ import org.mindrot.jbcrypt.BCrypt
 
 interface UserRepository {
     suspend fun login(login: LoginDTO): String?
-    suspend fun loginWithGoogle(googleToken: String): String?
+    suspend fun loginWithGoogle(googleToken: GoogleAuthDTO): String?
     suspend fun register(register: RegisterDTO): String?
     suspend fun getUsers(): List<UserBO>
     suspend fun getUserById(id: String?): UserBO?
@@ -40,7 +41,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         }
     }
 
-    override suspend fun loginWithGoogle(googleToken: String): String? {
+    override suspend fun loginWithGoogle(googleToken: GoogleAuthDTO): String? {
         val verifier: GoogleIdTokenVerifier =
             GoogleIdTokenVerifier.Builder(
                 NetHttpTransport(),
@@ -50,7 +51,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
                 .setIssuer("https://accounts.google.com")
                 .build()
 
-        return verifier.verify(googleToken)?.let {
+        return verifier.verify(googleToken.authToken)?.let {
             val payload: GoogleIdToken.Payload = it.payload
 
             // Print user identifier
