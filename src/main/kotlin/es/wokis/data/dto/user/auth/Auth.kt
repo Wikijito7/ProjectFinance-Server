@@ -15,3 +15,11 @@ data class RegisterDTO(
     val lang: String = DEFAULT_LANG,
     val isGoogleAuth: Boolean = false
 )
+
+data class AuthResponseDTO(
+    val authToken: String
+)
+
+data class GoogleAuthDTO (
+    val authToken: String
+)

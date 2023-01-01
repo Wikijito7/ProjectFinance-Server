@@ -1,5 +1,7 @@
 package es.wokis.routing
 
+import es.wokis.data.dto.user.auth.AuthResponseDTO
+import es.wokis.data.dto.user.auth.GoogleAuthDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
 import es.wokis.data.repository.user.UserRepository
@@ -18,7 +20,7 @@ fun Routing.setUpAuthRouting() {
         val token: String? = userRepository.login(user)
 
         token?.let {
-            call.respond(HttpStatusCode.OK, it)
+            call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
         } ?: run {
             call.respond(HttpStatusCode.NotFound, "Wrong username or password")
         }
@@ -30,17 +32,17 @@ fun Routing.setUpAuthRouting() {
         val token: String? = userRepository.register(user)
 
         token?.let {
-            call.respond(HttpStatusCode.OK, it)
+            call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
         } ?: run {
             call.respond(HttpStatusCode.Conflict, "That user already exists")
         }
     }
 
     post("/google-auth") {
-        val googleToken = call.receive<String>()
+        val googleToken = call.receive<GoogleAuthDTO>()
         val token: String? = userRepository.loginWithGoogle(googleToken)
         token?.let {
-            call.respond(HttpStatusCode.OK, it)
+            call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
         } ?: call.respond(HttpStatusCode.NotFound, "That user doesn't exists.")
     }
 }
