@@ -1,8 +1,11 @@
 package es.wokis.data.mapper.user
 
+import es.wokis.data.bo.user.BadgeBO
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
+import es.wokis.data.dbo.user.BadgeDBO
 import es.wokis.data.dbo.user.UserDBO
+import es.wokis.data.dto.user.BadgeDTO
 import es.wokis.data.dto.user.UserDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
@@ -29,7 +32,10 @@ fun UserDTO.toBO() = UserBO(
     password = EMPTY_TEXT,
     image = image,
     lang = lang,
-    devices = devices
+    devices = devices,
+    badges = badges.toBO(),
+    createdOn = createdOn,
+    emailVerified = emailVerified
 )
 
 fun UserBO.toDBO() = UserDBO(
@@ -39,7 +45,10 @@ fun UserBO.toDBO() = UserDBO(
     password = password,
     lang = lang,
     image = image,
-    devices = devices
+    devices = devices,
+    badges = badges.toDBO(),
+    createdOn = createdOn,
+    emailVerified = emailVerified
 )
 
 fun UserDBO.toBO() = UserBO(
@@ -49,7 +58,10 @@ fun UserDBO.toBO() = UserBO(
     password = password,
     image = image,
     lang = lang,
-    devices = devices
+    devices = devices,
+    badges = badges.toBO(),
+    createdOn = createdOn,
+    emailVerified = emailVerified
 )
 
 fun List<UserBO>?.toDTO() = this?.map { it.toDTO() }.orEmpty()
@@ -60,5 +72,38 @@ fun UserBO.toDTO() = UserDTO(
     email = email,
     image = image,
     lang = lang,
-    devices = devices
+    devices = devices,
+    badges = badges.toDTO(),
+    createdOn = createdOn,
+    emailVerified = emailVerified
+)
+
+@JvmName("toBOBadgeDTO")
+fun List<BadgeDTO>.toBO() = this.map { it.toBO() }
+
+fun List<BadgeDBO>.toBO() = this.map { it.toBO() }
+
+fun List<BadgeBO>.toDBO() = this.map { it.toDBO() }
+
+@JvmName("toDTOBadgeBO")
+fun List<BadgeBO>.toDTO() = this.map { it.toDTO() }
+
+fun BadgeDTO.toBO() = BadgeBO(
+    id = id,
+    color = color
+)
+
+fun BadgeDBO.toBO() = BadgeBO(
+    id = id,
+    color = color
+)
+
+fun BadgeBO.toDBO() = BadgeDBO(
+    id = id,
+    color = color
+)
+
+fun BadgeBO.toDTO() = BadgeDTO(
+    id = id,
+    color = color
 )
