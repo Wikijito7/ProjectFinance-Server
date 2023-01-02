@@ -77,7 +77,8 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
                 getUserByEmail(email)?.let { userNotNull ->
                     updateUser(
                         userNotNull.copy(
-                            image = imageUrl
+                            image = imageUrl,
+                            emailVerified = true
                         )
                     )
                 }

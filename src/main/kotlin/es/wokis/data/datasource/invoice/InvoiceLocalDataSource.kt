@@ -31,7 +31,7 @@ class InvoiceLocalDataSourceImpl(private val invoiceCollection: MongoCollection<
         }.toList()
 
     override suspend fun addInvoices(id: String, invoices: List<InvoiceBO>): Boolean = try {
-        invoiceCollection.insertMany(invoices.toDBO()).wasAcknowledged()
+        invoiceCollection.insertMany(invoices.map { it.copy(userId = id) }.toDBO()).wasAcknowledged()
 
     } catch (e: Throwable) {
         println(e.stackTraceToString())
@@ -39,7 +39,7 @@ class InvoiceLocalDataSourceImpl(private val invoiceCollection: MongoCollection<
     }
 
     override suspend fun updateInvoices(id: String, invoices: List<InvoiceBO>): Boolean = try {
-        invoices.toDBO().map {
+        invoices.map { it.copy(userId = id) }.toDBO().map {
             invoiceCollection.updateOne(InvoiceDBO::id eq it.id, it).wasAcknowledged()
         }.all { it }
 
