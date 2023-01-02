@@ -31,7 +31,19 @@ class InvoiceLocalDataSourceImpl(private val invoiceCollection: MongoCollection<
         }.toList()
 
     override suspend fun addInvoices(id: String, invoices: List<InvoiceBO>): Boolean = try {
-        invoiceCollection.insertMany(invoices.map { it.copy(userId = id) }.toDBO()).wasAcknowledged()
+        val localInvoices = getInvoicesOfUser(id)
+        var lastUpdatedId = localInvoices.map { it.idApp }.maxByOrNull { it } ?: 0
+        invoices.map { it.copy(userId = id) }.toDBO().map {
+            invoiceCollection.insertOne(
+                if (localInvoices.any { localInvoice -> localInvoice.idApp == it.idApp }) {
+                    lastUpdatedId++
+                    it.copy(idApp = lastUpdatedId)
+
+                } else {
+                    it
+                }
+            ).wasAcknowledged()
+        }.all { it }
 
     } catch (e: Throwable) {
         println(e.stackTraceToString())
