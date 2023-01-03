@@ -1,21 +1,33 @@
 package es.wokis.data.dto.user
 
-import es.wokis.data.constants.ServerConstants
+import com.google.gson.annotations.SerializedName
+import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import java.util.*
 
 data class UserDTO(
+    @SerializedName("id")
     val id: String,
+    @SerializedName("username")
     val username: String,
+    @SerializedName("email")
     val email: String,
-    val image: String = ServerConstants.EMPTY_TEXT,
+    @SerializedName("image")
+    val image: String = EMPTY_TEXT,
+    @SerializedName("lang")
     val lang: String,
-    val createdOn: Long = Date().time,
+    @SerializedName("createdOn")
+    val createdOn: Long,
+    @SerializedName("emailVerified")
     val emailVerified: Boolean = false,
+    @SerializedName("devices")
+    val devices: List<String> = emptyList(),
+    @SerializedName("badges")
     val badges: List<BadgeDTO> = emptyList(),
-    val devices: List<String> = emptyList()
 )
 
 data class BadgeDTO(
+    @SerializedName("id")
     val id: Int,
+    @SerializedName("color")
     val color: String
 )
