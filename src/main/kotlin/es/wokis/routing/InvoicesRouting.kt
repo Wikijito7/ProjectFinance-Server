@@ -22,6 +22,7 @@ fun Routing.setUpInvoicesRouting() {
             user?.id?.let {
                 val invoices = invoiceRepository.getInvoicesOfUser(it)
                 call.respond(HttpStatusCode.OK, invoices.toDTO())
+
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
 
@@ -29,8 +30,9 @@ fun Routing.setUpInvoicesRouting() {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
             user?.id?.let {
-                val userInvoices = invoiceRepository.addInvoices(it, invoices.toBO())
+                val userInvoices = invoiceRepository.addInvoices(it, invoices.toBO()).toDTO()
                 call.respond(HttpStatusCode.OK, userInvoices)
+
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
 
@@ -38,8 +40,9 @@ fun Routing.setUpInvoicesRouting() {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
             user?.id?.let {
-                val userInvoices = invoiceRepository.updateInvoices(it, invoices.toBO())
+                val userInvoices = invoiceRepository.updateInvoices(it, invoices.toBO()).toDTO()
                 call.respond(HttpStatusCode.OK, userInvoices)
+
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
 
@@ -47,8 +50,9 @@ fun Routing.setUpInvoicesRouting() {
             val user = call.user
             val invoicesIds = call.receive<List<String>>()
             user?.id?.let {
-                val userInvoices = invoiceRepository.deleteInvoices(it, invoicesIds)
+                val userInvoices = invoiceRepository.deleteInvoices(it, invoicesIds).toDTO()
                 call.respond(HttpStatusCode.OK, userInvoices)
+
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
     }

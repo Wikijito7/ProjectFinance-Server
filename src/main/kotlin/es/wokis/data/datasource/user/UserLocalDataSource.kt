@@ -23,7 +23,7 @@ interface UserLocalDataSource {
 
 class UserLocalDataSourceImpl(private val userCollection: MongoCollection<UserDBO>) : UserLocalDataSource {
     private val getCaseInsensitive: (element: String) -> Pattern = {
-        Pattern.compile(it, Pattern.CASE_INSENSITIVE)
+        Pattern.compile("\\b$it\\b", Pattern.CASE_INSENSITIVE)
     }
 
     override suspend fun getAllUsers(): List<UserBO> = userCollection.find().map {

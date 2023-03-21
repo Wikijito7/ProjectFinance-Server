@@ -4,12 +4,14 @@ import es.wokis.data.bo.invoice.CategoryBO
 import es.wokis.data.bo.invoice.InvoiceBO
 import es.wokis.data.bo.invoice.InvoiceType
 import es.wokis.data.bo.invoice.ReactionBO
+import es.wokis.data.bo.response.AcknowledgeBO
 import es.wokis.data.dbo.invoice.CategoryDBO
 import es.wokis.data.dbo.invoice.InvoiceDBO
 import es.wokis.data.dbo.invoice.ReactionDBO
 import es.wokis.data.dto.invoice.CategoryDTO
 import es.wokis.data.dto.invoice.InvoiceDTO
 import es.wokis.data.dto.invoice.ReactionDTO
+import es.wokis.data.dto.response.AcknowledgeDTO
 import org.bson.types.ObjectId
 import org.litote.kmongo.id.toId
 import java.util.*
@@ -128,3 +130,5 @@ fun ReactionBO.toDTO() = ReactionDTO(
     id = id,
     unicode = unicode
 )
+
+fun AcknowledgeBO.toDTO() = AcknowledgeDTO(acknowledge)
