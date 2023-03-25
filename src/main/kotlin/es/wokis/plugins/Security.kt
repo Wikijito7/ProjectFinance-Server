@@ -32,11 +32,15 @@ fun Application.configureSecurity() {
             verifier(makeJwtVerifier(jwtIssuer, jwtAudience))
             validate { credential ->
                 val name = credential.payload.getClaim("username").asString()
-                val password = credential.payload.getClaim("password").asString()
+                val claimSession = credential.payload.getClaim("session").asString()
 
                 val user = userRepository.getUserByUsername(name)
 
-                user?.takeIf { password == it.password }
+                user?.takeIf {
+                    it.sessions.any {session ->
+                        session == claimSession
+                    }
+                }
             }
         }
     }
@@ -55,13 +59,13 @@ private fun makeJwtVerifier(issuer: String, audience: String): JWTVerifier =
  * @param user the user whose token is being made
  */
 
-fun makeToken(user: UserBO): String =
+fun makeToken(user: UserBO, session: String): String =
     JWT
         .create()
         .withSubject("Authentication")
         .withIssuer(jwtIssuer)
         .withAudience(jwtAudience)
         .withClaim("username", user.username)
-        .withClaim("password", user.password.takeIf { it.isNotBlank() }.orGeneratePassword() )
+        .withClaim("session", session)
         .withClaim("timestamp", Date().time)
         .sign(algorithm)

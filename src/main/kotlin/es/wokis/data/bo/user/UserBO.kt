@@ -14,6 +14,7 @@ data class UserBO(
     val lang: String = DEFAULT_LANG,
     val createdOn: Long = Date().time,
     val emailVerified: Boolean = false,
+    val sessions: List<String> = emptyList(),
     val badges: List<BadgeBO> = emptyList(),
     val devices: List<String> = emptyList()
 ) : Principal

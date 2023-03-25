@@ -47,6 +47,7 @@ fun UserBO.toDBO() = UserDBO(
     image = image,
     devices = devices,
     badges = badges.toDBO(),
+    sessions = sessions,
     createdOn = createdOn,
     emailVerified = emailVerified
 )
@@ -59,6 +60,7 @@ fun UserDBO.toBO() = UserBO(
     image = image,
     lang = lang,
     devices = devices,
+    sessions = sessions,
     badges = badges.toBO(),
     createdOn = createdOn,
     emailVerified = emailVerified

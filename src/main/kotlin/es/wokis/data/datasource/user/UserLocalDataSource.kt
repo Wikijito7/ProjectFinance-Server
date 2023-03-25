@@ -22,7 +22,7 @@ interface UserLocalDataSource {
 }
 
 class UserLocalDataSourceImpl(private val userCollection: MongoCollection<UserDBO>) : UserLocalDataSource {
-    private val getCaseInsensitive: (element: String) -> Pattern = {
+    private val getUsernameCaseInsensitive: (element: String) -> Pattern = {
         Pattern.compile("\\b$it\\b", Pattern.CASE_INSENSITIVE)
     }
 
@@ -36,16 +36,16 @@ class UserLocalDataSourceImpl(private val userCollection: MongoCollection<UserDB
     }
 
     override suspend fun getUserByEmail(email: String): UserBO? =
-        userCollection.findOne(UserDBO::email.regex(getCaseInsensitive(email)))?.toBO()
+        userCollection.findOne(UserDBO::email.regex(email))?.toBO()
 
     override suspend fun getUserByUsername(username: String): UserBO? =
-        userCollection.findOne(UserDBO::username.regex(getCaseInsensitive(username)))?.toBO()
+        userCollection.findOne(UserDBO::username.regex(getUsernameCaseInsensitive(username)))?.toBO()
 
     override suspend fun getUserByUsernameOrEmail(username: String, email: String): UserBO? =
         userCollection.findOne(
             or(
-                UserDBO::username.regex(getCaseInsensitive(username)),
-                UserDBO::email.regex(getCaseInsensitive(email.takeIf { it.isNotBlank() } ?: username))
+                UserDBO::username.regex(getUsernameCaseInsensitive(username)),
+                UserDBO::email.regex(email.takeIf { it.isNotBlank() } ?: username)
             )
         )?.toBO()
 

@@ -12,9 +12,11 @@ import es.wokis.data.dto.user.auth.GoogleAuthDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
 import es.wokis.data.mapper.user.toBO
+import es.wokis.data.mapper.user.toLoginDTO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
 import es.wokis.utils.HashGenerator
+import es.wokis.utils.isEmail
 import org.mindrot.jbcrypt.BCrypt
 
 interface UserRepository {
@@ -30,10 +32,15 @@ interface UserRepository {
 
 class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
     override suspend fun login(login: LoginDTO): String? {
-        val user = userLocalDataSource.getUserByUsernameOrEmail(login.username)
+        val user = if (login.username.isEmail()) {
+            userLocalDataSource.getUserByEmail(login.username)
+
+        } else {
+            userLocalDataSource.getUserByUsername(login.username)
+        }
         return user?.let {
             if (BCrypt.checkpw(login.password, it.password)) {
-                makeToken(it)
+                makeJWTToken(user)
 
             } else {
                 null
@@ -94,12 +101,13 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
     }
 
     override suspend fun register(register: RegisterDTO): String? {
+        if (register.email.isEmail().not()) return null
         val currentUser = userLocalDataSource.getUserByUsernameOrEmail(register.username, register.email)
         val user = register.toBO()
         return if (currentUser == null) {
             val wasRegistered = userLocalDataSource.createUser(user)
             if (wasRegistered) {
-                makeToken(user)
+                login(register.toLoginDTO())
 
             } else {
                 null
@@ -125,4 +133,15 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
     }
 
     override suspend fun updateUser(user: UserBO): Boolean = userLocalDataSource.updateUser(user)
+
+    private suspend fun makeJWTToken(user: UserBO): String {
+        val session = HashGenerator.generateHash(20)
+        val userSessions = user.sessions.toMutableList().apply { add(session) }.toList()
+        userLocalDataSource.updateUser(
+            user.copy(
+                sessions = userSessions
+            )
+        )
+        return makeToken(user, session)
+    }
 }
