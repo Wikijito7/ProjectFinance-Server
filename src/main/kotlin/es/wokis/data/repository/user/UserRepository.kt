@@ -4,6 +4,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
+import es.wokis.data.bo.response.AcknowledgeBO
+import es.wokis.data.bo.user.UpdateUserBO
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
@@ -15,8 +17,10 @@ import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toLoginDTO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
+import es.wokis.services.EmailService
 import es.wokis.utils.HashGenerator
 import es.wokis.utils.isEmail
+import es.wokis.utils.isTrue
 import org.mindrot.jbcrypt.BCrypt
 
 interface UserRepository {
@@ -27,7 +31,8 @@ interface UserRepository {
     suspend fun getUserById(id: String?): UserBO?
     suspend fun getUserByUsername(name: String?): UserBO?
     suspend fun getUserByEmail(email: String?): UserBO?
-    suspend fun updateUser(user: UserBO): Boolean
+    suspend fun updateUser(user: UserBO, updatedUser: UpdateUserBO? = null): AcknowledgeBO
+    suspend fun updateUserAvatar(user: UserBO, avatarUrl: String): AcknowledgeBO
 }
 
 class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
@@ -132,7 +137,19 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         userLocalDataSource.getUserByEmail(it)
     }
 
-    override suspend fun updateUser(user: UserBO): Boolean = userLocalDataSource.updateUser(user)
+    override suspend fun updateUser(user: UserBO, updatedUser: UpdateUserBO?): AcknowledgeBO {
+        val userToUpdate: UserBO = updatedUser?.let {
+            val updatedEmail = updatedUser.email?.takeIf { it.isEmail() }
+            user.copy(
+                username = updatedUser.username ?: user.username,
+                email = updatedEmail ?: user.email,
+                emailVerified = updatedEmail?.let { true }.isTrue()
+            )
+        } ?: user
+        return AcknowledgeBO(userLocalDataSource.updateUser(userToUpdate))
+    }
+
+    override suspend fun updateUserAvatar(user: UserBO, avatarUrl: String) = updateUser(user.copy(image = avatarUrl))
 
     private suspend fun makeJWTToken(user: UserBO): String {
         val session = HashGenerator.generateHash(20)
@@ -145,3 +162,4 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         return makeToken(user, session)
     }
 }
+

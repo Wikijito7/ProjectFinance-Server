@@ -1,6 +1,7 @@
 package es.wokis.data.mapper.user
 
 import es.wokis.data.bo.user.BadgeBO
+import es.wokis.data.bo.user.UpdateUserBO
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.dbo.user.BadgeDBO
@@ -9,6 +10,7 @@ import es.wokis.data.dto.user.BadgeDTO
 import es.wokis.data.dto.user.UserDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
+import es.wokis.data.dto.user.update.UpdateUserDTO
 import org.bson.types.ObjectId
 import org.litote.kmongo.id.toId
 import org.mindrot.jbcrypt.BCrypt
@@ -108,4 +110,9 @@ fun BadgeBO.toDBO() = BadgeDBO(
 fun BadgeBO.toDTO() = BadgeDTO(
     id = id,
     color = color
+)
+
+fun UpdateUserDTO.toBO() = UpdateUserBO(
+    username = username,
+    email = email
 )
