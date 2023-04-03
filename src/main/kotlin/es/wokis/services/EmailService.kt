@@ -24,12 +24,12 @@ object EmailService {
             ?: this::class.java.getResource("/emails/en/email-verify.html") ?: throw IllegalAccessException()
 
         val properties: Properties = System.getProperties().apply {
-            put("mail.smtp.host", "mail.wokis.es")
+            put("mail.smtp.host", "ssl0.ovh.net")
             put("mail.smtp.user", fromEmail)
             put("mail.smtp.clave", fromPassword)
             put("mail.smtp.auth", "true")
             put("mail.smtp.starttls.enable", "true")
-            put("mail.smtp.ssl.trust", "mail.wokis.es");
+            put("mail.smtp.ssl.trust", "ssl0.ovh.net");
             put("mail.smtp.port", 587)
         }
         val hash = HashGenerator.generateHash(20)
@@ -50,7 +50,7 @@ object EmailService {
             }
 
             with(session.getTransport("smtp")) {
-                connect("mail.wokis.es", fromEmail, fromPassword)
+                connect("ssl0.ovh.net", fromEmail, fromPassword)
                 sendMessage(message, message.allRecipients)
                 close()
             }
