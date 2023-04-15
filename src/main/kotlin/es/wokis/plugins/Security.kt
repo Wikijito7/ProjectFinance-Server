@@ -37,7 +37,7 @@ fun Application.configureSecurity() {
                     it.sessions.any {session ->
                         session == claimSession
                     }
-                }
+                }?.copy(currentSession = claimSession)
             }
         }
     }

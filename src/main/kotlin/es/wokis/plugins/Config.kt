@@ -22,3 +22,6 @@ fun Application.initConfig() {
 
     config = ConfigFactory.parseFile(File("config/app.conf"))
 }
+
+val Config.issuer: String
+    get() = getString("issuer")

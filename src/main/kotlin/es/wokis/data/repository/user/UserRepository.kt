@@ -10,14 +10,15 @@ import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.datasource.user.UserLocalDataSource
+import es.wokis.data.dto.user.auth.ChangePassRequestDTO
 import es.wokis.data.dto.user.auth.GoogleAuthDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
+import es.wokis.data.exception.PasswordConflictException
 import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toLoginDTO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
-import es.wokis.services.EmailService
 import es.wokis.utils.HashGenerator
 import es.wokis.utils.isEmail
 import es.wokis.utils.isTrue
@@ -33,6 +34,11 @@ interface UserRepository {
     suspend fun getUserByEmail(email: String?): UserBO?
     suspend fun updateUser(user: UserBO, updatedUser: UpdateUserBO? = null): AcknowledgeBO
     suspend fun updateUserAvatar(user: UserBO, avatarUrl: String): AcknowledgeBO
+    suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray): AcknowledgeBO
+    suspend fun removeTOTP(user: UserBO): AcknowledgeBO
+    suspend fun changePass(user: UserBO, changePass: ChangePassRequestDTO): AcknowledgeBO
+    suspend fun logout(user: UserBO): AcknowledgeBO
+    suspend fun closeAllSessions(user: UserBO): AcknowledgeBO
 }
 
 class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
@@ -150,6 +156,38 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
     }
 
     override suspend fun updateUserAvatar(user: UserBO, avatarUrl: String) = updateUser(user.copy(image = avatarUrl))
+    override suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray): AcknowledgeBO {
+        if (user.totpEncodedSecret == null) {
+            return updateUser(user)
+        }
+        return AcknowledgeBO(false)
+    }
+
+    override suspend fun removeTOTP(user: UserBO): AcknowledgeBO = updateUser(user.copy(totpEncodedSecret = null))
+    override suspend fun changePass(user: UserBO, changePass: ChangePassRequestDTO): AcknowledgeBO {
+        if (BCrypt.checkpw(changePass.oldPass, user.password)) {
+            return updateUser(
+                user.copy(
+                    password = BCrypt.hashpw(changePass.newPass, BCrypt.gensalt())
+                )
+            )
+        }
+        throw PasswordConflictException
+    }
+
+    override suspend fun logout(user: UserBO): AcknowledgeBO {
+        val updatedUser = user.copy(
+            sessions = user.sessions.filter { it != user.currentSession }
+        )
+        return updateUser(updatedUser)
+    }
+
+    override suspend fun closeAllSessions(user: UserBO): AcknowledgeBO {
+        val updatedUser = user.copy(
+            sessions = emptyList()
+        )
+        return updateUser(updatedUser)
+    }
 
     private suspend fun makeJWTToken(user: UserBO): String {
         val session = HashGenerator.generateHash(20)

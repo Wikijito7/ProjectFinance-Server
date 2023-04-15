@@ -7,6 +7,8 @@ import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toDTO
 import es.wokis.data.repository.user.UserRepository
 import es.wokis.services.ImageService
+import es.wokis.services.TOTPService
+import es.wokis.services.withAuthenticator
 import es.wokis.utils.user
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -19,6 +21,7 @@ import org.koin.ktor.ext.inject
 
 fun Routing.setUpUserRouting() {
     val userRepository by inject<UserRepository>()
+    val totpService by inject<TOTPService>()
 
     route("/user/{id}/avatar") {
         get {
@@ -52,8 +55,10 @@ fun Routing.setUpUserRouting() {
                 val callUser = call.user
                 val updatedUser = call.receive<UpdateUserDTO>()
                 callUser?.let {
-                    val acknowledged = userRepository.updateUser(callUser, updatedUser.toBO())
-                    call.respond(HttpStatusCode.OK, acknowledged.toDTO())
+                    withAuthenticator(it) {
+                        val acknowledged = userRepository.updateUser(callUser, updatedUser.toBO())
+                        call.respond(HttpStatusCode.OK, acknowledged.toDTO())
+                    }
 
                 } ?: call.respond(HttpStatusCode.Unauthorized)
             }
@@ -63,31 +68,57 @@ fun Routing.setUpUserRouting() {
                     val multipartData = call.receiveMultipart()
                     val callUser = call.user
                     callUser?.let { user ->
-                        val image: PartData.FileItem = multipartData.readAllParts()
-                            .find { part ->
-                                part is PartData.FileItem
-                            }?.takeIf { part ->
-                                part.contentType.toString().startsWith("image")
-                            } as? PartData.FileItem ?: run {
-                            call.respond(HttpStatusCode.UnsupportedMediaType)
-                            return@post
-                        }
-
-                        user.id?.let {
-                            ImageService.insertAvatar(it, image).also { avatarUrl ->
-                                // this is used to reload the image as we always use the same name
-                                val url = "$avatarUrl?${System.currentTimeMillis()}"
-                                call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, url))
+                        withAuthenticator(user) {
+                            val image: PartData.FileItem = multipartData.readAllParts()
+                                .find { part ->
+                                    part is PartData.FileItem
+                                }?.takeIf { part ->
+                                    part.contentType.toString().startsWith("image")
+                                } as? PartData.FileItem ?: run {
+                                call.respond(HttpStatusCode.UnsupportedMediaType)
+                                return@post
                             }
-                        } ?: call.respond(HttpStatusCode.UnprocessableEntity)
 
+                            user.id?.let {
+                                ImageService.insertAvatar(it, image).also { avatarUrl ->
+                                    // this is used to reload the image as we always use the same name
+                                    val url = "$avatarUrl?${System.currentTimeMillis()}"
+                                    call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, url))
+                                }
+                            } ?: call.respond(HttpStatusCode.UnprocessableEntity)
+                        }
                     } ?: call.respond(HttpStatusCode.Unauthorized)
                 }
 
                 delete {
                     val callUser = call.user
                     callUser?.let { user ->
-                        call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, EMPTY_TEXT))
+                        withAuthenticator(user) {
+                            call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, EMPTY_TEXT))
+                        }
+                    } ?: call.respond(HttpStatusCode.Unauthorized)
+                }
+            }
+
+            route("/2fa") {
+                post {
+                    val callUser = call.user
+                    callUser?.let { user ->
+                        try {
+                            call.respond(HttpStatusCode.OK, totpService.setUpTOTP(user))
+
+                        } catch (exc: Exception) {
+                            call.respond(HttpStatusCode.Conflict, exc.message.orEmpty())
+                        }
+                    } ?: call.respond(HttpStatusCode.Unauthorized)
+                }
+
+                delete {
+                    val callUser = call.user
+                    callUser?.let { user ->
+                        withAuthenticator(user) {
+                            call.respond(HttpStatusCode.OK, totpService.removeTOTP(user))
+                        }
                     } ?: call.respond(HttpStatusCode.Unauthorized)
                 }
             }
