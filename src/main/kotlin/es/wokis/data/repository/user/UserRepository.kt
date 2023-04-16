@@ -14,13 +14,16 @@ import es.wokis.data.dto.user.auth.ChangePassRequestDTO
 import es.wokis.data.dto.user.auth.GoogleAuthDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
+import es.wokis.data.exception.EmailAlreadyExistsException
 import es.wokis.data.exception.PasswordConflictException
+import es.wokis.data.exception.UsernameAlreadyExistsException
 import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toLoginDTO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
 import es.wokis.utils.HashGenerator
 import es.wokis.utils.isEmail
+import es.wokis.utils.isFalse
 import es.wokis.utils.isTrue
 import org.mindrot.jbcrypt.BCrypt
 
@@ -145,11 +148,18 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
 
     override suspend fun updateUser(user: UserBO, updatedUser: UpdateUserBO?): AcknowledgeBO {
         val userToUpdate: UserBO = updatedUser?.let {
-            val updatedEmail = updatedUser.email?.takeIf { it.isEmail() }
+            getUserByUsername(it.username)?.let {
+                throw UsernameAlreadyExistsException
+            }
+            val updatedEmail = updatedUser.email?.takeIf { email -> email.isEmail() }?.also { email ->
+                getUserByEmail(email)?.let {
+                    throw EmailAlreadyExistsException
+                }
+            }
             user.copy(
                 username = updatedUser.username ?: user.username,
                 email = updatedEmail ?: user.email,
-                emailVerified = updatedEmail?.let { true }.isTrue()
+                emailVerified = updatedEmail?.let { false } ?: user.emailVerified
             )
         } ?: user
         return AcknowledgeBO(userLocalDataSource.updateUser(userToUpdate))

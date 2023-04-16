@@ -3,6 +3,7 @@ package es.wokis.services
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.bo.verification.VerificationBO
 import es.wokis.data.constants.ServerConstants.LANG_ES
+import es.wokis.data.repository.verify.VerifyRepository
 import es.wokis.plugins.config
 import es.wokis.utils.HashGenerator
 import java.util.*
@@ -12,14 +13,11 @@ import javax.mail.Session
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
-object EmailService {
+class EmailService(private val verifyRepository: VerifyRepository) {
     private val fromEmail = config.getString("mail.user")
     private val fromPassword = config.getString("mail.pass")
 
-    private const val VERIFY_EMAIL_EN = "Project Finance - Verify Email"
-    private const val VERIFY_EMAIL_ES = "Project Finance - Verificar Email"
-
-    fun sendEmail(user: UserBO): VerificationBO {
+    suspend fun sendEmail(user: UserBO): VerificationBO {
         val emailHtml = this::class.java.getResource("/emails/${user.lang}/email-verify.html")
             ?: this::class.java.getResource("/emails/en/email-verify.html") ?: throw IllegalAccessException()
 
@@ -62,6 +60,13 @@ object EmailService {
         return VerificationBO(
             email = user.email,
             verificationToken = hash
-        )
+        ).also {
+            verifyRepository.addVerification(it)
+        }
+    }
+
+    companion object {
+        private const val VERIFY_EMAIL_EN = "Project Finance - Verify Email"
+        private const val VERIFY_EMAIL_ES = "Project Finance - Verificar Email"
     }
 }

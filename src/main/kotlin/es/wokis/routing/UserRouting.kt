@@ -58,8 +58,13 @@ fun Routing.setUpUserRouting() {
                 callUser?.let {
                     withAuthenticator(it) {
                         verified(it) {
-                            val acknowledged = userRepository.updateUser(callUser, updatedUser.toBO())
-                            call.respond(HttpStatusCode.OK, acknowledged.toDTO())
+                            try {
+                                val acknowledged = userRepository.updateUser(callUser, updatedUser.toBO())
+                                call.respond(HttpStatusCode.OK, acknowledged.toDTO())
+
+                            } catch (exc: Exception) {
+                                call.respond(HttpStatusCode.Conflict, "Username already exists")
+                            }
                         }
                     }
 

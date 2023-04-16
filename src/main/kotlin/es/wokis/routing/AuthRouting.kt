@@ -18,6 +18,7 @@ import org.koin.ktor.ext.inject
 
 fun Routing.setUpAuthRouting() {
     val userRepository by inject<UserRepository>()
+    val emailService by inject<EmailService>()
     rateLimit(RateLimitName("auth")) {
         post("/login") {
             val user = call.receive<LoginDTO>()
@@ -34,8 +35,9 @@ fun Routing.setUpAuthRouting() {
             val user = call.receive<RegisterDTO>()
             val token: String? = userRepository.register(user)
             token?.let {
-                EmailService.sendEmail(user.toBO())
-                call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
+                call.respond(HttpStatusCode.OK, AuthResponseDTO(it)).also {
+                    emailService.sendEmail(user.toBO())
+                }
 
             } ?: run {
                 call.respond(HttpStatusCode.Conflict, "That user already exists")
@@ -55,7 +57,7 @@ fun Routing.setUpAuthRouting() {
                 val user = call.user
                 user?.let {
                     try {
-                        val verificationBO = EmailService.sendEmail(it)
+                        val verificationBO = emailService.sendEmail(it)
                         call.respond(HttpStatusCode.OK, verificationBO)
 
                     } catch (exc: Exception) {

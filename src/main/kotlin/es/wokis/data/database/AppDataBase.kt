@@ -5,6 +5,7 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.MongoCredential
 import es.wokis.data.dbo.invoice.InvoiceDBO
 import es.wokis.data.dbo.user.UserDBO
+import es.wokis.data.dbo.verification.VerificationDBO
 import es.wokis.plugins.config
 import org.litote.kmongo.KMongo
 import org.litote.kmongo.getCollection
@@ -23,6 +24,7 @@ class AppDataBase {
     val database by lazy { client.getDatabase(databaseName) }
     val usersCollection by lazy { database.getCollection<UserDBO>("users") }
     val invoicesCollection by lazy { database.getCollection<InvoiceDBO>("invoices") }
+    val verificationCollection by lazy { database.getCollection<VerificationDBO>("verification") }
 
     companion object {
         private const val MONGODB_PREFIX = "mongodb://"
