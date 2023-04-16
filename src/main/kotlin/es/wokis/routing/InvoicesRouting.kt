@@ -4,6 +4,7 @@ import es.wokis.data.dto.invoice.InvoiceDTO
 import es.wokis.data.mapper.invoice.toBO
 import es.wokis.data.mapper.invoice.toDTO
 import es.wokis.data.repository.invoices.InvoiceRepository
+import es.wokis.routing.utils.verified
 import es.wokis.utils.user
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -19,9 +20,14 @@ fun Routing.setUpInvoicesRouting() {
     authenticate {
         get("/invoices") {
             val user = call.user
-            user?.id?.let {
-                val invoices = invoiceRepository.getInvoicesOfUser(it)
-                call.respond(HttpStatusCode.OK, invoices.toDTO())
+            user?.let {
+                verified(it) {
+                    it.id?.let { id ->
+                        val invoices = invoiceRepository.getInvoicesOfUser(id)
+                        call.respond(HttpStatusCode.OK, invoices.toDTO())
+
+                    } ?: call.respond(HttpStatusCode.Unauthorized)
+                }
 
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
@@ -29,9 +35,14 @@ fun Routing.setUpInvoicesRouting() {
         post("/invoices") {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
-            user?.id?.let {
-                val userInvoices = invoiceRepository.addInvoices(it, invoices.toBO()).toDTO()
-                call.respond(HttpStatusCode.OK, userInvoices)
+            user?.let {
+                verified(it) {
+                    it.id?.let { id ->
+                        val userInvoices = invoiceRepository.addInvoices(id, invoices.toBO()).toDTO()
+                        call.respond(HttpStatusCode.OK, userInvoices)
+
+                    } ?: call.respond(HttpStatusCode.Unauthorized)
+                }
 
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
@@ -39,9 +50,14 @@ fun Routing.setUpInvoicesRouting() {
         put("/invoices") {
             val user = call.user
             val invoices = call.receive<List<InvoiceDTO>>()
-            user?.id?.let {
-                val userInvoices = invoiceRepository.updateInvoices(it, invoices.toBO()).toDTO()
-                call.respond(HttpStatusCode.OK, userInvoices)
+            user?.let {
+                verified(it) {
+                    it.id?.let { id ->
+                        val userInvoices = invoiceRepository.updateInvoices(id, invoices.toBO()).toDTO()
+                        call.respond(HttpStatusCode.OK, userInvoices)
+
+                    } ?: call.respond(HttpStatusCode.Unauthorized)
+                }
 
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }
@@ -49,9 +65,14 @@ fun Routing.setUpInvoicesRouting() {
         delete("/invoices") {
             val user = call.user
             val invoicesIds = call.receive<List<String>>()
-            user?.id?.let {
-                val userInvoices = invoiceRepository.deleteInvoices(it, invoicesIds).toDTO()
-                call.respond(HttpStatusCode.OK, userInvoices)
+            user?.let {
+                verified(it) {
+                    it.id?.let { id ->
+                        val userInvoices = invoiceRepository.deleteInvoices(id, invoicesIds).toDTO()
+                        call.respond(HttpStatusCode.OK, userInvoices)
+
+                    } ?: call.respond(HttpStatusCode.Unauthorized)
+                }
 
             } ?: call.respond(HttpStatusCode.Unauthorized)
         }

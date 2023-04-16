@@ -34,9 +34,7 @@ fun Routing.setUpAuthRouting() {
             val user = call.receive<RegisterDTO>()
             val token: String? = userRepository.register(user)
             token?.let {
-                EmailService.sendEmail(user.toBO()).also {
-
-                }
+                EmailService.sendEmail(user.toBO())
                 call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
 
             } ?: run {
@@ -51,6 +49,7 @@ fun Routing.setUpAuthRouting() {
                 call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
             } ?: call.respond(HttpStatusCode.NotFound, "That user doesn't exists.")
         }
+
         authenticate {
             post("/verify") {
                 val user = call.user

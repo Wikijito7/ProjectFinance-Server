@@ -6,6 +6,7 @@ import es.wokis.data.mapper.invoice.toDTO
 import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toDTO
 import es.wokis.data.repository.user.UserRepository
+import es.wokis.routing.utils.verified
 import es.wokis.services.ImageService
 import es.wokis.services.TOTPService
 import es.wokis.services.withAuthenticator
@@ -56,8 +57,10 @@ fun Routing.setUpUserRouting() {
                 val updatedUser = call.receive<UpdateUserDTO>()
                 callUser?.let {
                     withAuthenticator(it) {
-                        val acknowledged = userRepository.updateUser(callUser, updatedUser.toBO())
-                        call.respond(HttpStatusCode.OK, acknowledged.toDTO())
+                        verified(it) {
+                            val acknowledged = userRepository.updateUser(callUser, updatedUser.toBO())
+                            call.respond(HttpStatusCode.OK, acknowledged.toDTO())
+                        }
                     }
 
                 } ?: call.respond(HttpStatusCode.Unauthorized)
@@ -69,23 +72,25 @@ fun Routing.setUpUserRouting() {
                     val callUser = call.user
                     callUser?.let { user ->
                         withAuthenticator(user) {
-                            val image: PartData.FileItem = multipartData.readAllParts()
-                                .find { part ->
-                                    part is PartData.FileItem
-                                }?.takeIf { part ->
-                                    part.contentType.toString().startsWith("image")
-                                } as? PartData.FileItem ?: run {
-                                call.respond(HttpStatusCode.UnsupportedMediaType)
-                                return@post
-                            }
-
-                            user.id?.let {
-                                ImageService.insertAvatar(it, image).also { avatarUrl ->
-                                    // this is used to reload the image as we always use the same name
-                                    val url = "$avatarUrl?${System.currentTimeMillis()}"
-                                    call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, url))
+                            verified(user) {
+                                val image: PartData.FileItem = multipartData.readAllParts()
+                                    .find { part ->
+                                        part is PartData.FileItem
+                                    }?.takeIf { part ->
+                                        part.contentType.toString().startsWith("image")
+                                    } as? PartData.FileItem ?: run {
+                                    call.respond(HttpStatusCode.UnsupportedMediaType)
+                                    return@post
                                 }
-                            } ?: call.respond(HttpStatusCode.UnprocessableEntity)
+
+                                user.id?.let {
+                                    ImageService.insertAvatar(it, image).also { avatarUrl ->
+                                        // this is used to reload the image as we always use the same name
+                                        val url = "$avatarUrl?${System.currentTimeMillis()}"
+                                        call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, url))
+                                    }
+                                } ?: call.respond(HttpStatusCode.UnprocessableEntity)
+                            }
                         }
                     } ?: call.respond(HttpStatusCode.Unauthorized)
                 }
@@ -94,7 +99,9 @@ fun Routing.setUpUserRouting() {
                     val callUser = call.user
                     callUser?.let { user ->
                         withAuthenticator(user) {
-                            call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, EMPTY_TEXT))
+                            verified(user) {
+                                call.respond(HttpStatusCode.OK, userRepository.updateUserAvatar(user, EMPTY_TEXT))
+                            }
                         }
                     } ?: call.respond(HttpStatusCode.Unauthorized)
                 }
@@ -104,11 +111,13 @@ fun Routing.setUpUserRouting() {
                 post {
                     val callUser = call.user
                     callUser?.let { user ->
-                        try {
-                            call.respond(HttpStatusCode.OK, totpService.setUpTOTP(user))
+                        verified(user) {
+                            try {
+                                call.respond(HttpStatusCode.OK, totpService.setUpTOTP(user))
 
-                        } catch (exc: Exception) {
-                            call.respond(HttpStatusCode.Conflict, exc.message.orEmpty())
+                            } catch (exc: Exception) {
+                                call.respond(HttpStatusCode.Conflict, exc.message.orEmpty())
+                            }
                         }
                     } ?: call.respond(HttpStatusCode.Unauthorized)
                 }
