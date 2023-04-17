@@ -17,7 +17,7 @@ class EmailService(private val verifyRepository: VerifyRepository) {
     private val fromEmail = config.getString("mail.user")
     private val fromPassword = config.getString("mail.pass")
 
-    suspend fun sendEmail(user: UserBO): VerificationBO {
+    suspend fun sendEmail(user: UserBO): VerificationBO? {
         val emailHtml = this::class.java.getResource("/emails/${user.lang}/email-verify.html")
             ?: this::class.java.getResource("/emails/en/email-verify.html") ?: throw IllegalAccessException()
 
@@ -55,6 +55,7 @@ class EmailService(private val verifyRepository: VerifyRepository) {
 
         } catch (e: MessagingException) {
             println(e.message)
+            return null
         }
 
         return VerificationBO(

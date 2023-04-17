@@ -4,7 +4,9 @@ import es.wokis.data.dto.user.auth.*
 import es.wokis.data.mapper.invoice.toDTO
 import es.wokis.data.mapper.user.toBO
 import es.wokis.data.repository.user.UserRepository
+import es.wokis.data.repository.verify.VerifyRepository
 import es.wokis.services.EmailService
+import es.wokis.services.ImageService
 import es.wokis.services.withAuthenticator
 import es.wokis.utils.user
 import io.ktor.http.*
@@ -18,6 +20,7 @@ import org.koin.ktor.ext.inject
 
 fun Routing.setUpAuthRouting() {
     val userRepository by inject<UserRepository>()
+    val verifyRepository by inject<VerifyRepository>()
     val emailService by inject<EmailService>()
     rateLimit(RateLimitName("auth")) {
         post("/login") {
@@ -35,9 +38,13 @@ fun Routing.setUpAuthRouting() {
             val user = call.receive<RegisterDTO>()
             val token: String? = userRepository.register(user)
             token?.let {
-                call.respond(HttpStatusCode.OK, AuthResponseDTO(it)).also {
+                try {
                     emailService.sendEmail(user.toBO())
+
+                } catch (exc: Exception) {
+                    // no-op: as it isn't critical at this time
                 }
+                call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
 
             } ?: run {
                 call.respond(HttpStatusCode.Conflict, "That user already exists")
@@ -52,13 +59,28 @@ fun Routing.setUpAuthRouting() {
             } ?: call.respond(HttpStatusCode.NotFound, "That user doesn't exists.")
         }
 
+        get("/verify/{token}") {
+            val token = call.parameters["token"]
+
+            token?.let {
+                try {
+                    call.respond(verifyRepository.verify(token))
+
+                } catch (exc: Exception) {
+                    call.respond(HttpStatusCode.NotFound)
+                }
+            }
+        }
+
         authenticate {
             post("/verify") {
                 val user = call.user
                 user?.let {
                     try {
-                        val verificationBO = emailService.sendEmail(it)
-                        call.respond(HttpStatusCode.OK, verificationBO)
+                        emailService.sendEmail(it)?.also { verification ->
+                            call.respond(HttpStatusCode.OK, verification)
+
+                        } ?: call.respond(HttpStatusCode.ServiceUnavailable)
 
                     } catch (exc: Exception) {
                         call.respond(HttpStatusCode.InternalServerError, exc.stackTraceToString())

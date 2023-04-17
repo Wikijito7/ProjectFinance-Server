@@ -77,7 +77,6 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
 
             // Print user identifier
             val userId: String = payload.subject
-            println("User ID: $userId")
 
             // Get profile information from payload
             val email: String = payload.email
@@ -88,7 +87,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
             val token = if (user == null) {
                 val token = register(
                     RegisterDTO(
-                        username = username,
+                        username = userId,
                         email = email,
                         password = EMPTY_TEXT,
                         isGoogleAuth = true,

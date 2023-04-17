@@ -5,3 +5,5 @@ object PasswordConflictException : IllegalStateException()
 object UsernameAlreadyExistsException : IllegalStateException()
 
 object EmailAlreadyExistsException : IllegalStateException()
+
+object VerificationNotFoundException : IllegalStateException()

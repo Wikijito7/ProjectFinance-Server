@@ -21,7 +21,7 @@ val dataSourceModule = module {
     single(named("verificationCollection")) { getVerificationCollection(get()) as MongoCollection<VerificationDBO> }
     single { UserLocalDataSourceImpl(get(named("usersCollection"))) as UserLocalDataSource }
     single { InvoiceLocalDataSourceImpl(get(named("invoicesCollection"))) as InvoiceLocalDataSource }
-    single { VerifyLocalDataSourceImpl(get(named("invoicesCollection"))) as VerifyLocalDataSource }
+    single { VerifyLocalDataSourceImpl(get(named("verificationCollection"))) as VerifyLocalDataSource }
 }
 
 private fun getUsersCollection(database: AppDataBase) = database.usersCollection

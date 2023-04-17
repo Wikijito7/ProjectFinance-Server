@@ -11,7 +11,7 @@ fun Application.configureRateLimit() {
         }
 
         register(RateLimitName("auth")) {
-            rateLimiter(5, refillPeriod = 60.seconds)
+            rateLimiter(10, refillPeriod = 60.seconds)
         }
     }
 }
