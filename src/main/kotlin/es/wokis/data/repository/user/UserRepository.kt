@@ -5,15 +5,19 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import es.wokis.data.bo.response.AcknowledgeBO
+import es.wokis.data.bo.user.BadgeBO
 import es.wokis.data.bo.user.UpdateUserBO
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
+import es.wokis.data.constants.ServerConstants.MAX_OG_DATE
 import es.wokis.data.datasource.user.UserLocalDataSource
 import es.wokis.data.dto.user.auth.ChangePassRequestDTO
 import es.wokis.data.dto.user.auth.GoogleAuthDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
+import es.wokis.data.enums.BadgesEnum
+import es.wokis.data.enums.toBadge
 import es.wokis.data.exception.EmailAlreadyExistsException
 import es.wokis.data.exception.PasswordConflictException
 import es.wokis.data.exception.UsernameAlreadyExistsException
@@ -21,15 +25,16 @@ import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toLoginDTO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
+import es.wokis.projectfinance.utils.toDate
+import es.wokis.services.checkTOTP
 import es.wokis.utils.HashGenerator
 import es.wokis.utils.isEmail
-import es.wokis.utils.isFalse
-import es.wokis.utils.isTrue
 import org.mindrot.jbcrypt.BCrypt
+import java.util.*
 
 interface UserRepository {
-    suspend fun login(login: LoginDTO): String?
-    suspend fun loginWithGoogle(googleToken: GoogleAuthDTO): String?
+    suspend fun login(login: LoginDTO, code: String?, timeStamp: Long?): String?
+    suspend fun loginWithGoogle(googleToken: GoogleAuthDTO, code: String?, timeStamp: Long?): String?
     suspend fun register(register: RegisterDTO): String?
     suspend fun getUsers(): List<UserBO>
     suspend fun getUserById(id: String?): UserBO?
@@ -42,16 +47,27 @@ interface UserRepository {
     suspend fun changePass(user: UserBO, changePass: ChangePassRequestDTO): AcknowledgeBO
     suspend fun logout(user: UserBO): AcknowledgeBO
     suspend fun closeAllSessions(user: UserBO): AcknowledgeBO
+    suspend fun getUserByEmailOrUsername(username: String): UserBO?
 }
 
-class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) : UserRepository {
-    override suspend fun login(login: LoginDTO): String? {
-        val user = if (login.username.isEmail()) {
-            userLocalDataSource.getUserByEmail(login.username)
-
-        } else {
-            userLocalDataSource.getUserByUsername(login.username)
+class UserRepositoryImpl(
+    private val userLocalDataSource: UserLocalDataSource
+) : UserRepository {
+    override suspend fun login(login: LoginDTO, code: String?, timeStamp: Long?): String? {
+        val user = getUserByEmailOrUsername(login.username)
+        user?.totpEncodedSecret?.let {
+            checkTOTP(it, code, timeStamp) {
+                return doLogin(user, login)
+            }
         }
+
+        return doLogin(user, login)
+    }
+
+    private suspend fun doLogin(
+        user: UserBO?,
+        login: LoginDTO
+    ): String? {
         return user?.let {
             if (BCrypt.checkpw(login.password, it.password)) {
                 makeJWTToken(user)
@@ -62,7 +78,14 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         }
     }
 
-    override suspend fun loginWithGoogle(googleToken: GoogleAuthDTO): String? {
+    override suspend fun getUserByEmailOrUsername(username: String): UserBO? = if (username.isEmail()) {
+        userLocalDataSource.getUserByEmail(username)
+
+    } else {
+        userLocalDataSource.getUserByUsername(username)
+    }
+
+    override suspend fun loginWithGoogle(googleToken: GoogleAuthDTO, code: String?, timeStamp: Long?): String? {
         val verifier: GoogleIdTokenVerifier =
             GoogleIdTokenVerifier.Builder(
                 NetHttpTransport(),
@@ -95,10 +118,12 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
                     )
                 )
                 getUserByEmail(email)?.let { userNotNull ->
+                    val badges = addOGBadge().addVerifyBadge()
                     updateUser(
                         userNotNull.copy(
                             image = imageUrl,
-                            emailVerified = true
+                            emailVerified = true,
+                            badges = badges
                         )
                     )
                 }
@@ -106,7 +131,9 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
 
             } else {
                 login(
-                    LoginDTO(username = username, password = EMPTY_TEXT, isGoogleAuth = true)
+                    LoginDTO(username = username, password = EMPTY_TEXT, isGoogleAuth = true),
+                    code,
+                    timeStamp
                 )
             }
             token
@@ -116,11 +143,12 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
     override suspend fun register(register: RegisterDTO): String? {
         if (register.email.isEmail().not()) return null
         val currentUser = userLocalDataSource.getUserByUsernameOrEmail(register.username, register.email)
-        val user = register.toBO()
+        val badges = addOGBadge()
+        val user = register.toBO().copy(badges = badges)
         return if (currentUser == null) {
             val wasRegistered = userLocalDataSource.createUser(user)
             if (wasRegistered) {
-                login(register.toLoginDTO())
+                login(register.toLoginDTO(), null, null)
 
             } else {
                 null
@@ -129,6 +157,13 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         } else {
             null
         }
+    }
+
+    private fun addOGBadge(): List<BadgeBO> {
+        val maxDate = MAX_OG_DATE.toDate().time
+        val today = Date().time
+
+        return listOf(BadgesEnum.OG.toBadge()).takeIf { today < maxDate }.orEmpty()
     }
 
     override suspend fun getUsers(): List<UserBO> = userLocalDataSource.getAllUsers()
@@ -167,7 +202,7 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
     override suspend fun updateUserAvatar(user: UserBO, avatarUrl: String) = updateUser(user.copy(image = avatarUrl))
     override suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray): AcknowledgeBO {
         if (user.totpEncodedSecret == null) {
-            return updateUser(user)
+            return updateUser(user.copy(totpEncodedSecret = encodedSecret))
         }
         return AcknowledgeBO(false)
     }
@@ -209,4 +244,8 @@ class UserRepositoryImpl(private val userLocalDataSource: UserLocalDataSource) :
         return makeToken(user, session)
     }
 }
+
+private fun List<BadgeBO>.addVerifyBadge() = this.toMutableList().apply {
+    add(BadgesEnum.VERIFIED.toBadge())
+}.toList()
 

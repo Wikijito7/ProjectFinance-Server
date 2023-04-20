@@ -1,13 +1,12 @@
 package es.wokis.routing
 
 import es.wokis.data.dto.user.auth.*
+import es.wokis.data.exception.TotpNotFoundException
 import es.wokis.data.mapper.invoice.toDTO
 import es.wokis.data.mapper.user.toBO
 import es.wokis.data.repository.user.UserRepository
 import es.wokis.data.repository.verify.VerifyRepository
-import es.wokis.services.EmailService
-import es.wokis.services.ImageService
-import es.wokis.services.withAuthenticator
+import es.wokis.services.*
 import es.wokis.utils.user
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -25,12 +24,22 @@ fun Routing.setUpAuthRouting() {
     rateLimit(RateLimitName("auth")) {
         post("/login") {
             val user = call.receive<LoginDTO>()
-            val token: String? = userRepository.login(user)
+            val code = call.request.header(TOTP_HEADER)
+            val timeStamp = call.request.header(TIMESTAMP_HEADER)?.toLongOrNull()
+            try {
+                val token: String? = userRepository.login(user, code, timeStamp)
 
-            token?.let {
-                call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
-            } ?: run {
-                call.respond(HttpStatusCode.NotFound, "Wrong username or password")
+                token?.let {
+                    call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
+                } ?: run {
+                    call.respond(HttpStatusCode.NotFound, "Wrong username or password")
+                }
+
+            } catch (exc: TotpNotFoundException) {
+                respondNotAuthorization()
+
+            } catch (exc: Exception) {
+                call.respond(HttpStatusCode.InternalServerError)
             }
         }
 
@@ -53,10 +62,20 @@ fun Routing.setUpAuthRouting() {
 
         post("/google-auth") {
             val googleToken = call.receive<GoogleAuthDTO>()
-            val token: String? = userRepository.loginWithGoogle(googleToken)
-            token?.let {
-                call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
-            } ?: call.respond(HttpStatusCode.NotFound, "That user doesn't exists.")
+            val code = call.request.header(TOTP_HEADER)
+            val timeStamp = call.request.header(TIMESTAMP_HEADER)?.toLongOrNull()
+            try {
+                val token: String? = userRepository.loginWithGoogle(googleToken, code, timeStamp)
+                token?.let {
+                    call.respond(HttpStatusCode.OK, AuthResponseDTO(it))
+                } ?: call.respond(HttpStatusCode.NotFound, "That user doesn't exists.")
+
+            } catch (exc: TotpNotFoundException) {
+                respondNotAuthorization()
+
+            } catch (exc: Exception) {
+                call.respond(HttpStatusCode.InternalServerError)
+            }
         }
 
         get("/verify/{token}") {

@@ -7,3 +7,5 @@ object UsernameAlreadyExistsException : IllegalStateException()
 object EmailAlreadyExistsException : IllegalStateException()
 
 object VerificationNotFoundException : IllegalStateException()
+
+object TotpNotFoundException : IllegalStateException()

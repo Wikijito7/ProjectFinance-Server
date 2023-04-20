@@ -1,13 +1,11 @@
 package es.wokis.services
 
-import com.google.cloud.storage.Acl.User
 import dev.turingcomplete.kotlinonetimepassword.GoogleAuthenticator
-import dev.turingcomplete.kotlinonetimepassword.OtpAuthUriBuilder
 import es.wokis.data.bo.response.AcknowledgeBO
 import es.wokis.data.bo.user.TOTPResponseBO
 import es.wokis.data.bo.user.UserBO
-import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.dto.user.auth.TOTPRequestDTO
+import es.wokis.data.exception.TotpNotFoundException
 import es.wokis.data.repository.user.UserRepository
 import es.wokis.plugins.config
 import es.wokis.plugins.issuer
@@ -37,6 +35,7 @@ class TOTPService(private val userRepository: UserRepository) {
         val encodedSecret = Base32().encode(plainSecretCode)
         val totpUrl = GoogleAuthenticator(encodedSecret)
             .otpAuthUriBuilder()
+            .label(user.username, null)
             .issuer(config.issuer)
             .buildToString()
         val acknowledge = userRepository.saveTOTPEncodedSecret(user, encodedSecret).acknowledge
@@ -55,34 +54,41 @@ class TOTPService(private val userRepository: UserRepository) {
 
 suspend inline fun PipelineContext<Unit, ApplicationCall>.withAuthenticator(user: UserBO, block: () -> Unit) {
     val secret = user.totpEncodedSecret
+    val code = call.request.header(TOTP_HEADER)
+    val timeStamp = call.request.header(TIMESTAMP_HEADER)?.toLongOrNull()
     if (secret == null) {
         block()
         return
     }
 
-    checkTOTP(secret) {
-        block()
+    try {
+        checkTOTP(secret, code, timeStamp) {
+            block()
+        }
+
+    } catch (exc: Exception) {
+        respondNotAuthorization()
     }
 }
 
-suspend inline fun PipelineContext<Unit, ApplicationCall>.checkTOTP(
+inline fun checkTOTP(
     secret: ByteArray,
-    block: () -> Unit
+    code: String?,
+    timeStamp: Long?,
+    block: () -> Unit = {}
 ) {
     val googleAuthenticator = GoogleAuthenticator(secret)
-    val code = call.request.header(TOTP_HEADER)
-    val timeStamp = call.request.header(TIMESTAMP_HEADER)?.toLongOrNull()
 
     code?.let { codeNotNull ->
         timeStamp?.let { timeStampNotNull ->
             if (googleAuthenticator.isValid(codeNotNull, Date(timeStampNotNull))) {
                 block()
 
-            } else {
-                respondNotAuthorization()
             }
-        } ?: respondNotAuthorization()
-    } ?: respondNotAuthorization()
+            throw TotpNotFoundException
+
+        } ?: throw TotpNotFoundException
+    } ?: throw TotpNotFoundException
 }
 
 suspend fun PipelineContext<Unit, ApplicationCall>.respondNotAuthorization() {
