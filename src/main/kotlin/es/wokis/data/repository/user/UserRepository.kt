@@ -42,7 +42,7 @@ interface UserRepository {
     suspend fun getUserByEmail(email: String?): UserBO?
     suspend fun updateUser(user: UserBO, updatedUser: UpdateUserBO? = null): AcknowledgeBO
     suspend fun updateUserAvatar(user: UserBO, avatarUrl: String): AcknowledgeBO
-    suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray): AcknowledgeBO
+    suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray, recoverWords: List<String>): AcknowledgeBO
     suspend fun removeTOTP(user: UserBO): AcknowledgeBO
     suspend fun changePass(user: UserBO, changePass: ChangePassRequestDTO): AcknowledgeBO
     suspend fun logout(user: UserBO): AcknowledgeBO
@@ -200,9 +200,9 @@ class UserRepositoryImpl(
     }
 
     override suspend fun updateUserAvatar(user: UserBO, avatarUrl: String) = updateUser(user.copy(image = avatarUrl))
-    override suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray): AcknowledgeBO {
+    override suspend fun saveTOTPEncodedSecret(user: UserBO, encodedSecret: ByteArray, recoverWords: List<String>): AcknowledgeBO {
         if (user.totpEncodedSecret == null) {
-            return updateUser(user.copy(totpEncodedSecret = encodedSecret))
+            return updateUser(user.copy(totpEncodedSecret = encodedSecret, recoverWords = recoverWords))
         }
         return AcknowledgeBO(false)
     }

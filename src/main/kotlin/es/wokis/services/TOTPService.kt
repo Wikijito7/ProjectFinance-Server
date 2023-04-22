@@ -10,6 +10,7 @@ import es.wokis.data.repository.user.UserRepository
 import es.wokis.plugins.config
 import es.wokis.plugins.issuer
 import es.wokis.utils.HashGenerator
+import es.wokis.utils.getRandomWords
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -38,11 +39,13 @@ class TOTPService(private val userRepository: UserRepository) {
             .label(user.username, null)
             .issuer(config.issuer)
             .buildToString()
-        val acknowledge = userRepository.saveTOTPEncodedSecret(user, encodedSecret).acknowledge
+        val recoverWords = getRandomWords()
+        val acknowledge = userRepository.saveTOTPEncodedSecret(user, encodedSecret, recoverWords).acknowledge
         if (acknowledge) {
             return TOTPResponseBO(
                 StringUtils.newStringUtf8(encodedSecret),
-                totpUrl
+                totpUrl,
+                recoverWords
             )
         }
         throw IllegalStateException()

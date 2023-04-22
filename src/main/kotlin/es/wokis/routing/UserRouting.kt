@@ -3,6 +3,7 @@ package es.wokis.routing
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.dto.user.update.UpdateUserDTO
 import es.wokis.data.mapper.invoice.toDTO
+import es.wokis.data.mapper.totp.toDTO
 import es.wokis.data.mapper.user.toBO
 import es.wokis.data.mapper.user.toDTO
 import es.wokis.data.repository.user.UserRepository
@@ -118,7 +119,7 @@ fun Routing.setUpUserRouting() {
                     callUser?.let { user ->
                         verified(user) {
                             try {
-                                call.respond(HttpStatusCode.OK, totpService.setUpTOTP(user))
+                                call.respond(HttpStatusCode.OK, totpService.setUpTOTP(user).toDTO())
 
                             } catch (exc: Exception) {
                                 call.respond(HttpStatusCode.Conflict, exc.message.orEmpty())
@@ -131,7 +132,7 @@ fun Routing.setUpUserRouting() {
                     val callUser = call.user
                     callUser?.let { user ->
                         withAuthenticator(user) {
-                            call.respond(HttpStatusCode.OK, totpService.removeTOTP(user))
+                            call.respond(HttpStatusCode.OK, totpService.removeTOTP(user).toDTO())
                         }
                     } ?: call.respond(HttpStatusCode.Unauthorized)
                 }

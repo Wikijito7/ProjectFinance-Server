@@ -18,7 +18,8 @@ data class UserBO(
     val emailVerified: Boolean = false,
     val sessions: List<String> = emptyList(),
     val badges: List<BadgeBO> = emptyList(),
-    val devices: List<String> = emptyList()
+    val devices: List<String> = emptyList(),
+    val recoverWords: List<String> = emptyList()
 ) : Principal {
 
     override fun equals(other: Any?): Boolean {

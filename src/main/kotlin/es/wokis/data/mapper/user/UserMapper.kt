@@ -52,7 +52,8 @@ fun UserBO.toDBO() = UserDBO(
     badges = badges.toDBO(),
     sessions = sessions,
     createdOn = createdOn,
-    emailVerified = emailVerified
+    emailVerified = emailVerified,
+    recoverWords = recoverWords
 )
 
 fun UserDBO.toBO() = UserBO(
@@ -67,7 +68,8 @@ fun UserDBO.toBO() = UserBO(
     sessions = sessions,
     badges = badges.toBO(),
     createdOn = createdOn,
-    emailVerified = emailVerified
+    emailVerified = emailVerified,
+    recoverWords = recoverWords
 )
 
 fun List<UserBO>?.toDTO() = this?.map { it.toDTO() }.orEmpty()
