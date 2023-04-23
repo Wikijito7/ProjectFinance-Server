@@ -4,6 +4,7 @@ import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoCredential
 import es.wokis.data.dbo.invoice.InvoiceDBO
+import es.wokis.data.dbo.recover.RecoverDBO
 import es.wokis.data.dbo.user.UserDBO
 import es.wokis.data.dbo.verification.VerificationDBO
 import es.wokis.plugins.config
@@ -25,6 +26,7 @@ class AppDataBase {
     val usersCollection by lazy { database.getCollection<UserDBO>("users") }
     val invoicesCollection by lazy { database.getCollection<InvoiceDBO>("invoices") }
     val verificationCollection by lazy { database.getCollection<VerificationDBO>("verification") }
+    val recoverCollection by lazy { database.getCollection<RecoverDBO>("recover") }
 
     companion object {
         private const val MONGODB_PREFIX = "mongodb://"

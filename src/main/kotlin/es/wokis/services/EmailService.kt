@@ -1,5 +1,6 @@
 package es.wokis.services
 
+import es.wokis.data.bo.recover.RecoverBO
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.bo.verification.VerificationBO
 import es.wokis.data.constants.ServerConstants.LANG_ES
@@ -13,29 +14,58 @@ import javax.mail.Session
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
-class EmailService(private val verifyRepository: VerifyRepository) {
+class EmailService(
+    private val verifyRepository: VerifyRepository
+) {
     private val fromEmail = config.getString("mail.user")
     private val fromPassword = config.getString("mail.pass")
 
-    suspend fun sendEmail(user: UserBO): VerificationBO? {
+    suspend fun sendVerifyEmail(user: UserBO): VerificationBO? {
         val emailHtml = this::class.java.getResource("/emails/${user.lang}/email-verify.html")
             ?: this::class.java.getResource("/emails/en/email-verify.html") ?: throw IllegalAccessException()
 
-        val properties: Properties = System.getProperties().apply {
-            put("mail.smtp.host", "ssl0.ovh.net")
-            put("mail.smtp.user", fromEmail)
-            put("mail.smtp.clave", fromPassword)
-            put("mail.smtp.auth", "true")
-            put("mail.smtp.starttls.enable", "true")
-            put("mail.smtp.ssl.trust", "ssl0.ovh.net");
-            put("mail.smtp.port", 587)
-        }
+        val properties: Properties = getProperties()
         val hash = HashGenerator.generateHash(20)
         val body = emailHtml.readText().replace("%%TOKEN", hash)
 
         val session = Session.getDefaultInstance(properties)
         val message = MimeMessage(session)
 
+        if (sendMessage(message, user, body, session)) return null
+
+        return VerificationBO(
+            email = user.email,
+            verificationToken = hash
+        ).also {
+            verifyRepository.addVerification(it)
+        }
+    }
+
+    suspend fun sendRecoverPass(user: UserBO): RecoverBO? {
+        val emailHtml = this::class.java.getResource("/emails/${user.lang}/recover-pass.html")
+            ?: this::class.java.getResource("/emails/en/recover-pass.html") ?: throw IllegalAccessException()
+
+        val properties: Properties = getProperties()
+        val hash = HashGenerator.generateHash(12)
+        val body = emailHtml.readText().replace("%%recover", hash)
+
+        val session = Session.getDefaultInstance(properties)
+        val message = MimeMessage(session)
+
+        if (sendMessage(message, user, body, session)) return null
+
+        return RecoverBO(
+            email = user.email,
+            verificationToken = hash
+        )
+    }
+
+    private fun EmailService.sendMessage(
+        message: MimeMessage,
+        user: UserBO,
+        body: String,
+        session: Session
+    ): Boolean {
         try {
             with(message) {
                 setFrom(InternetAddress(fromEmail))
@@ -55,16 +85,21 @@ class EmailService(private val verifyRepository: VerifyRepository) {
 
         } catch (e: MessagingException) {
             println(e.message)
-            return null
+            return true
         }
-
-        return VerificationBO(
-            email = user.email,
-            verificationToken = hash
-        ).also {
-            verifyRepository.addVerification(it)
-        }
+        return false
     }
+
+    private fun getProperties() = System.getProperties().apply {
+        put("mail.smtp.host", "ssl0.ovh.net")
+        put("mail.smtp.user", fromEmail)
+        put("mail.smtp.clave", fromPassword)
+        put("mail.smtp.auth", "true")
+        put("mail.smtp.starttls.enable", "true")
+        put("mail.smtp.ssl.trust", "ssl0.ovh.net");
+        put("mail.smtp.port", 587)
+    }
+
 
     companion object {
         private const val VERIFY_EMAIL_EN = "Project Finance - Verify Email"

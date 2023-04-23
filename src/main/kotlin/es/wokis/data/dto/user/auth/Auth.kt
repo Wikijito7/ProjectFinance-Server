@@ -36,7 +36,9 @@ data class GoogleAuthDTO(
 
 data class ChangePassRequestDTO(
     @SerializedName("oldPass")
-    val oldPass: String,
+    val oldPass: String?,
+    @SerializedName("recoverCode")
+    val recoverCode: String?,
     @SerializedName("newPass")
     val newPass: String
 )

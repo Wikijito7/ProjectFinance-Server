@@ -1,12 +1,16 @@
 package es.wokis.routing
 
+import es.wokis.data.dto.recover.RecoverPassRequestDTO
 import es.wokis.data.dto.user.auth.*
 import es.wokis.data.exception.TotpNotFoundException
+import es.wokis.data.exception.UserNotFoundException
 import es.wokis.data.mapper.invoice.toDTO
 import es.wokis.data.mapper.user.toBO
+import es.wokis.data.repository.recover.RecoverRepository
 import es.wokis.data.repository.user.UserRepository
 import es.wokis.data.repository.verify.VerifyRepository
 import es.wokis.services.*
+import es.wokis.utils.isEmail
 import es.wokis.utils.user
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -20,6 +24,7 @@ import org.koin.ktor.ext.inject
 fun Routing.setUpAuthRouting() {
     val userRepository by inject<UserRepository>()
     val verifyRepository by inject<VerifyRepository>()
+    val recoverRepository by inject<RecoverRepository>()
     val emailService by inject<EmailService>()
     rateLimit(RateLimitName("auth")) {
         post("/login") {
@@ -48,7 +53,7 @@ fun Routing.setUpAuthRouting() {
             val token: String? = userRepository.register(user)
             token?.let {
                 try {
-                    emailService.sendEmail(user.toBO())
+                    emailService.sendVerifyEmail(user.toBO())
 
                 } catch (exc: Exception) {
                     // no-op: as it isn't critical at this time
@@ -91,12 +96,43 @@ fun Routing.setUpAuthRouting() {
             }
         }
 
+        post("/recover") {
+            try {
+                val changePass: RecoverPassRequestDTO = call.receive()
+                if (changePass.email.isEmail().not()) {
+                    call.respond(HttpStatusCode.BadRequest)
+                    return@post
+                }
+
+                call.respond(recoverRepository.requestChangePass(changePass.email).toDTO())
+
+            } catch (e: UserNotFoundException) {
+                call.respond(HttpStatusCode.Conflict)
+
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest)
+            }
+        }
+
+        post("/recover-pass") {
+            try {
+                val changePass: ChangePassRequestDTO = call.receive()
+                call.respond(recoverRepository.changeUserPassword(changePass).toDTO())
+
+            } catch (e: UserNotFoundException) {
+                call.respond(HttpStatusCode.Conflict)
+
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest)
+            }
+        }
+
         authenticate {
             post("/verify") {
                 val user = call.user
                 user?.let {
                     try {
-                        emailService.sendEmail(it)?.also { verification ->
+                        emailService.sendVerifyEmail(it)?.also { verification ->
                             call.respond(HttpStatusCode.OK, verification)
 
                         } ?: call.respond(HttpStatusCode.ServiceUnavailable)

@@ -9,3 +9,7 @@ object EmailAlreadyExistsException : IllegalStateException()
 object VerificationNotFoundException : IllegalStateException()
 
 object TotpNotFoundException : IllegalStateException()
+
+object RecoverCodeNotFoundException : IllegalStateException()
+
+object UserNotFoundException : IllegalStateException()

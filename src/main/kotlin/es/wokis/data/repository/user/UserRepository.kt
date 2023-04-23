@@ -26,6 +26,7 @@ import es.wokis.data.mapper.user.toLoginDTO
 import es.wokis.plugins.config
 import es.wokis.plugins.makeToken
 import es.wokis.projectfinance.utils.toDate
+import es.wokis.services.EmailService
 import es.wokis.services.checkTOTP
 import es.wokis.utils.HashGenerator
 import es.wokis.utils.isEmail
@@ -51,7 +52,7 @@ interface UserRepository {
 }
 
 class UserRepositoryImpl(
-    private val userLocalDataSource: UserLocalDataSource
+    private val userLocalDataSource: UserLocalDataSource,
 ) : UserRepository {
     override suspend fun login(login: LoginDTO, code: String?, timeStamp: Long?): String? {
         val user = getUserByEmailOrUsername(login.username)
@@ -207,7 +208,8 @@ class UserRepositoryImpl(
         return AcknowledgeBO(false)
     }
 
-    override suspend fun removeTOTP(user: UserBO): AcknowledgeBO = updateUser(user.copy(totpEncodedSecret = null))
+    override suspend fun removeTOTP(user: UserBO): AcknowledgeBO = updateUser(user.copy(totpEncodedSecret = null, recoverWords = emptyList()))
+
     override suspend fun changePass(user: UserBO, changePass: ChangePassRequestDTO): AcknowledgeBO {
         if (BCrypt.checkpw(changePass.oldPass, user.password)) {
             return updateUser(
