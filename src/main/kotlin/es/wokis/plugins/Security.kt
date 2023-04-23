@@ -3,15 +3,12 @@ package es.wokis.plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.firebase.auth.hash.Bcrypt
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.repository.user.UserRepository
-import es.wokis.utils.orGeneratePassword
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import org.koin.ktor.ext.inject
-import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 
 private lateinit var jwtIssuer: String
@@ -31,16 +28,16 @@ fun Application.configureSecurity() {
             realm = jwtRealm
             verifier(makeJwtVerifier(jwtIssuer, jwtAudience))
             validate { credential ->
-                val name = credential.payload.getClaim("username").asString()
+                val id = credential.payload.getClaim("id").asString()
                 val claimSession = credential.payload.getClaim("session").asString()
 
-                val user = userRepository.getUserByUsername(name)
+                val user = userRepository.getUserById(id)
 
                 user?.takeIf {
                     it.sessions.any {session ->
                         session == claimSession
                     }
-                }
+                }?.copy(currentSession = claimSession)
             }
         }
     }
@@ -65,7 +62,7 @@ fun makeToken(user: UserBO, session: String): String =
         .withSubject("Authentication")
         .withIssuer(jwtIssuer)
         .withAudience(jwtAudience)
-        .withClaim("username", user.username)
+        .withClaim("id", user.id)
         .withClaim("session", session)
         .withClaim("timestamp", Date().time)
         .sign(algorithm)

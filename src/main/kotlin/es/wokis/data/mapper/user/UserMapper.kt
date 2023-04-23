@@ -1,6 +1,7 @@
 package es.wokis.data.mapper.user
 
 import es.wokis.data.bo.user.BadgeBO
+import es.wokis.data.bo.user.UpdateUserBO
 import es.wokis.data.bo.user.UserBO
 import es.wokis.data.constants.ServerConstants.EMPTY_TEXT
 import es.wokis.data.dbo.user.BadgeDBO
@@ -9,6 +10,7 @@ import es.wokis.data.dto.user.BadgeDTO
 import es.wokis.data.dto.user.UserDTO
 import es.wokis.data.dto.user.auth.LoginDTO
 import es.wokis.data.dto.user.auth.RegisterDTO
+import es.wokis.data.dto.user.update.UpdateUserDTO
 import org.bson.types.ObjectId
 import org.litote.kmongo.id.toId
 import org.mindrot.jbcrypt.BCrypt
@@ -45,11 +47,13 @@ fun UserBO.toDBO() = UserDBO(
     password = password,
     lang = lang,
     image = image,
+    totpEncodedSecret = totpEncodedSecret,
     devices = devices,
     badges = badges.toDBO(),
     sessions = sessions,
     createdOn = createdOn,
-    emailVerified = emailVerified
+    emailVerified = emailVerified,
+    recoverWords = recoverWords
 )
 
 fun UserDBO.toBO() = UserBO(
@@ -59,11 +63,13 @@ fun UserDBO.toBO() = UserBO(
     password = password,
     image = image,
     lang = lang,
+    totpEncodedSecret = totpEncodedSecret,
     devices = devices,
     sessions = sessions,
     badges = badges.toBO(),
     createdOn = createdOn,
-    emailVerified = emailVerified
+    emailVerified = emailVerified,
+    recoverWords = recoverWords
 )
 
 fun List<UserBO>?.toDTO() = this?.map { it.toDTO() }.orEmpty()
@@ -74,6 +80,7 @@ fun UserBO.toDTO() = UserDTO(
     email = email,
     image = image,
     lang = lang,
+    totpEnabled = totpEncodedSecret != null,
     devices = devices,
     badges = badges.toDTO(),
     createdOn = createdOn,
@@ -108,4 +115,9 @@ fun BadgeBO.toDBO() = BadgeDBO(
 fun BadgeBO.toDTO() = BadgeDTO(
     id = id,
     color = color
+)
+
+fun UpdateUserDTO.toBO() = UpdateUserBO(
+    username = username,
+    email = email
 )

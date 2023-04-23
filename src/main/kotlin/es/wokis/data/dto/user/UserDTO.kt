@@ -17,6 +17,8 @@ data class UserDTO(
     val lang: String,
     @SerializedName("createdOn")
     val createdOn: Long,
+    @SerializedName("totpEnabled")
+    val totpEnabled: Boolean,
     @SerializedName("emailVerified")
     val emailVerified: Boolean = false,
     @SerializedName("devices")

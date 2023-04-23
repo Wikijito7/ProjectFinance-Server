@@ -1,5 +1,8 @@
 package es.wokis.plugins
 
+import es.wokis.services.TIMESTAMP_HEADER
+import es.wokis.services.TOTPService
+import es.wokis.services.TOTP_HEADER
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.cors.routing.*
@@ -17,6 +20,8 @@ fun Application.configureHTTP() {
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.AccessControlAllowOrigin)
         allowHeader(HttpHeaders.Authorization)
+        allowHeader(TIMESTAMP_HEADER)
+        allowHeader(TOTP_HEADER)
 
         allowNonSimpleContentTypes = true
         allowCredentials = true

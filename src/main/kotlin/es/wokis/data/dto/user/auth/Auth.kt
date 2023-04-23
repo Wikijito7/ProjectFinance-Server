@@ -2,6 +2,7 @@ package es.wokis.data.dto.user.auth
 
 import com.google.gson.annotations.SerializedName
 import es.wokis.data.constants.ServerConstants.DEFAULT_LANG
+import es.wokis.services.GOOGLE_AUTHENTICATOR
 
 data class LoginDTO(
     @SerializedName("username")
@@ -28,7 +29,23 @@ data class AuthResponseDTO(
     val authToken: String
 )
 
-data class GoogleAuthDTO (
+data class GoogleAuthDTO(
     @SerializedName("authToken")
     val authToken: String
+)
+
+data class ChangePassRequestDTO(
+    @SerializedName("oldPass")
+    val oldPass: String?,
+    @SerializedName("recoverCode")
+    val recoverCode: String?,
+    @SerializedName("newPass")
+    val newPass: String
+)
+
+data class TOTPRequestDTO(
+    @SerializedName("authType")
+    val authType: String = GOOGLE_AUTHENTICATOR,
+    @SerializedName("timestamp")
+    val timestamp: Long,
 )
