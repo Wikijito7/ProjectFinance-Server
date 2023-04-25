@@ -3,6 +3,8 @@ val kotlin_version: String by project
 val logback_version: String by project
 val kmongo_version: String by project
 val koin_version: String by project
+val firebase_version: String by project
+val prometheus_version: String by project
 
 plugins {
     application
@@ -29,12 +31,15 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
     implementation("io.ktor:ktor-serialization-gson-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-metrics-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-cors-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-rate-limit:$ktor_version")
+    implementation("io.ktor:ktor-server-metrics-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-metrics-micrometer:$ktor_version")
+    implementation("io.micrometer:micrometer-registry-prometheus:$prometheus_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 
@@ -47,17 +52,33 @@ dependencies {
     // Koin
     implementation("io.insert-koin:koin-ktor:$koin_version")
     implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
+
+    // Firebase
+    implementation("com.google.firebase:firebase-admin:$firebase_version")
+
+    // BCrypt
+    implementation("org.mindrot:jbcrypt:0.4")
+
+    // Google auth
+    implementation("com.google.api-client:google-api-client:2.1.1")
+
+    // JavaMail
+    implementation("javax.mail:javax.mail-api:1.6.2")
+    implementation("com.sun.mail:javax.mail:1.6.2")
+
+    // TOTP
+    implementation("dev.turingcomplete:kotlin-onetimepassword:2.4.0")
 }
 
 ktor {
     fatJar {
-        archiveFileName.set("fat.jar")
+        archiveFileName.set("${rootProject.name}-${rootProject.version}.jar")
     }
 
     docker {
         jreVersion.set(io.ktor.plugin.features.JreVersion.JRE_17)
         localImageName.set(rootProject.name)
-        imageTag.set("0.0.1-preview")
+        imageTag.set("1.0-preview")
 
         externalRegistry.set(
             io.ktor.plugin.features.DockerImageRegistry.dockerHub(
