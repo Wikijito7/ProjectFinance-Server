@@ -15,6 +15,8 @@ data class UserDTO(
     val image: String = EMPTY_TEXT,
     @SerializedName("lang")
     val lang: String,
+    @SerializedName("loginWithGoogle")
+    val loginWithGoogle: Boolean = false,
     @SerializedName("createdOn")
     val createdOn: Long,
     @SerializedName("totpEnabled")

@@ -16,6 +16,7 @@ data class UserDBO(
     val image: String = ServerConstants.EMPTY_TEXT,
     val createdOn: Long = Date().time,
     val emailVerified: Boolean = false,
+    val loginWithGoogle: Boolean = false,
     val totpEncodedSecret: ByteArray? = null,
     val sessions: List<String> = emptyList(),
     val badges: List<BadgeDBO> = emptyList(),

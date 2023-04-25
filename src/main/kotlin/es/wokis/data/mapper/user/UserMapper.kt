@@ -35,6 +35,7 @@ fun UserDTO.toBO() = UserBO(
     image = image,
     lang = lang,
     devices = devices,
+    loginWithGoogle = loginWithGoogle,
     badges = badges.toBO(),
     createdOn = createdOn,
     emailVerified = emailVerified
@@ -53,6 +54,7 @@ fun UserBO.toDBO() = UserDBO(
     sessions = sessions,
     createdOn = createdOn,
     emailVerified = emailVerified,
+    loginWithGoogle = loginWithGoogle,
     recoverWords = recoverWords
 )
 
@@ -66,6 +68,7 @@ fun UserDBO.toBO() = UserBO(
     totpEncodedSecret = totpEncodedSecret,
     devices = devices,
     sessions = sessions,
+    loginWithGoogle = loginWithGoogle,
     badges = badges.toBO(),
     createdOn = createdOn,
     emailVerified = emailVerified,
@@ -82,6 +85,7 @@ fun UserBO.toDTO() = UserDTO(
     lang = lang,
     totpEnabled = totpEncodedSecret != null,
     devices = devices,
+    loginWithGoogle = loginWithGoogle,
     badges = badges.toDTO(),
     createdOn = createdOn,
     emailVerified = emailVerified

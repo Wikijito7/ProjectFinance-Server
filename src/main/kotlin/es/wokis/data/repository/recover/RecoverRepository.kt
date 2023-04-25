@@ -8,6 +8,7 @@ import es.wokis.data.exception.RecoverCodeNotFoundException
 import es.wokis.data.exception.UserNotFoundException
 import es.wokis.data.repository.user.UserRepository
 import es.wokis.services.EmailService
+import org.mindrot.jbcrypt.BCrypt
 
 interface RecoverRepository {
     suspend fun changeUserPassword(changePassRequest: ChangePassRequestDTO): AcknowledgeBO
@@ -25,10 +26,21 @@ class RecoverRepositoryImpl(
             throw RecoverCodeNotFoundException
         }
         val recover = localDataSource.getRecoverByToken(changePassRequest.recoverCode)
-        recover?.let {
-            val user = userRepository.getUserByEmail(it.email)
+        recover?.let { recover ->
+            val user = userRepository.getUserByEmail(recover.email)
             return user?.let {
-                userRepository.updateUser(user.copy(password = changePassRequest.newPass, sessions = listOf()))
+                recover.id?.let { recoverId ->
+                    localDataSource.removeRecover(recoverId)
+                }
+                userRepository.updateUser(
+                    user.copy(
+                        password = BCrypt.hashpw(
+                            changePassRequest.newPass,
+                            BCrypt.gensalt()
+                        ),
+                        sessions = listOf()
+                    )
+                )
             } ?: throw UserNotFoundException
         }
         throw RecoverCodeNotFoundException
@@ -37,6 +49,9 @@ class RecoverRepositoryImpl(
     override suspend fun requestChangePass(email: String): AcknowledgeBO {
         val user = userRepository.getUserByEmail(email)
         user?.let {
+            if (user.emailVerified) {
+                throw IllegalStateException()
+            }
             emailService.sendRecoverPass(user)?.also {
                 return saveRequestChangePass(it)
             } ?: throw IllegalStateException()

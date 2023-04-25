@@ -28,6 +28,6 @@ fun Application.configureHTTP() {
         allowSameOrigin = true
         maxAgeInSeconds = Duration.ofDays(1).toMinutes() * 60L
 
-        anyHost() // TODO: No dejarlo como anyhost, limitarlo al host final
+        anyHost()
     }
 }
