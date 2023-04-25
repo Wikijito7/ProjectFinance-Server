@@ -106,7 +106,6 @@ class UserRepositoryImpl(
             val email: String = payload.email
             val imageUrl: String = (payload["picture"] as? String).orEmpty()
             val locale: String = payload["locale"] as? String ?: DEFAULT_LANG
-            val username = email.split("@").firstOrNull() ?: HashGenerator.generateHash()
             val user = getUserByEmail(email)
             val token = if (user == null) {
                 val token = register(
@@ -132,7 +131,7 @@ class UserRepositoryImpl(
 
             } else {
                 login(
-                    LoginDTO(username = username, password = EMPTY_TEXT, isGoogleAuth = true),
+                    LoginDTO(username = email, password = EMPTY_TEXT, isGoogleAuth = true),
                     code,
                     timeStamp
                 )
@@ -214,7 +213,8 @@ class UserRepositoryImpl(
         if (BCrypt.checkpw(changePass.oldPass, user.password)) {
             return updateUser(
                 user.copy(
-                    password = BCrypt.hashpw(changePass.newPass, BCrypt.gensalt())
+                    password = BCrypt.hashpw(changePass.newPass, BCrypt.gensalt()),
+                    sessions = emptyList()
                 )
             )
         }

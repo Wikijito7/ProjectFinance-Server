@@ -16,6 +16,7 @@ data class UserBO(
     val totpEncodedSecret: ByteArray? = null,
     val currentSession: String? = null,
     val emailVerified: Boolean = false,
+    val loginWithGoogle: Boolean = false,
     val sessions: List<String> = emptyList(),
     val badges: List<BadgeBO> = emptyList(),
     val devices: List<String> = emptyList(),
