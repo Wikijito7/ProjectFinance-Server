@@ -123,7 +123,8 @@ class UserRepositoryImpl(
                         userNotNull.copy(
                             image = imageUrl,
                             emailVerified = true,
-                            badges = badges
+                            badges = badges,
+                            loginWithGoogle = true
                         )
                     )
                 }
