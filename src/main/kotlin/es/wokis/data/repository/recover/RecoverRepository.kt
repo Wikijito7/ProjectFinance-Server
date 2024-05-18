@@ -49,9 +49,6 @@ class RecoverRepositoryImpl(
     override suspend fun requestChangePass(email: String): AcknowledgeBO {
         val user = userRepository.getUserByEmail(email)
         user?.let {
-            if (user.emailVerified) {
-                throw IllegalStateException()
-            }
             emailService.sendRecoverPass(user)?.also {
                 return saveRequestChangePass(it)
             } ?: throw IllegalStateException()

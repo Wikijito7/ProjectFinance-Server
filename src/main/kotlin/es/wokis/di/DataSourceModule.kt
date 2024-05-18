@@ -26,7 +26,7 @@ val dataSourceModule = module {
     single { UserLocalDataSourceImpl(get(named("usersCollection"))) as UserLocalDataSource }
     single { InvoiceLocalDataSourceImpl(get(named("invoicesCollection"))) as InvoiceLocalDataSource }
     single { VerifyLocalDataSourceImpl(get(named("verificationCollection"))) as VerifyLocalDataSource }
-    single { RecoverLocalDataSourceImpl(get(named("verificationCollection"))) as RecoverLocalDataSource }
+    single { RecoverLocalDataSourceImpl(get(named("recoverCollection"))) as RecoverLocalDataSource }
 }
 
 private fun getUsersCollection(database: AppDataBase) = database.usersCollection
