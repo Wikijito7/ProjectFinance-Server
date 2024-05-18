@@ -30,8 +30,12 @@ class EmailService(
 
         val session = Session.getDefaultInstance(properties)
         val message = MimeMessage(session)
+        val title = when (user.lang) {
+            LANG_ES -> VERIFY_EMAIL_ES
+            else -> VERIFY_EMAIL_EN
+        }
 
-        if (sendMessage(message, user, body, session)) return null
+        if (sendMessage(title, message, user, body, session)) return null
 
         return VerificationBO(
             email = user.email,
@@ -41,7 +45,7 @@ class EmailService(
         }
     }
 
-    suspend fun sendRecoverPass(user: UserBO): RecoverBO? {
+    fun sendRecoverPass(user: UserBO): RecoverBO? {
         val emailHtml = this::class.java.getResource("/emails/${user.lang}/recover-pass.html")
             ?: this::class.java.getResource("/emails/en/recover-pass.html") ?: throw IllegalAccessException()
 
@@ -51,8 +55,12 @@ class EmailService(
 
         val session = Session.getDefaultInstance(properties)
         val message = MimeMessage(session)
+        val title = when (user.lang) {
+            LANG_ES -> RECOVER_PASS_ES
+            else -> RECOVER_PASS_EN
+        }
 
-        if (sendMessage(message, user, body, session)) return null
+        if (sendMessage(title, message, user, body, session)) return null
 
         return RecoverBO(
             email = user.email,
@@ -61,6 +69,7 @@ class EmailService(
     }
 
     private fun EmailService.sendMessage(
+        title: String,
         message: MimeMessage,
         user: UserBO,
         body: String,
@@ -70,10 +79,7 @@ class EmailService(
             with(message) {
                 setFrom(InternetAddress(fromEmail))
                 addRecipients(Message.RecipientType.TO, user.email)
-                subject = when (user.lang) {
-                    LANG_ES -> VERIFY_EMAIL_ES
-                    else -> VERIFY_EMAIL_EN
-                }
+                subject = title
                 setContent(body, "text/html")
             }
 
@@ -104,5 +110,7 @@ class EmailService(
     companion object {
         private const val VERIFY_EMAIL_EN = "Project Finance - Verify Email"
         private const val VERIFY_EMAIL_ES = "Project Finance - Verificar Email"
+        private const val RECOVER_PASS_EN = "Project Finance - Recover Pass"
+        private const val RECOVER_PASS_ES = "Project Finance - Recuperar Contraseña"
     }
 }
