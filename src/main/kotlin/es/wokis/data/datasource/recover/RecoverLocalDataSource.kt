@@ -21,7 +21,7 @@ interface RecoverLocalDataSource {
 class RecoverLocalDataSourceImpl(private val recoverCollection: MongoCollection<RecoverDBO>) :
     RecoverLocalDataSource {
     override suspend fun getRecoverByToken(token: String): RecoverBO? =
-        recoverCollection.findOne(RecoverDBO::recoverToken.regex(token))?.toBO()
+        recoverCollection.findOne(RecoverDBO::recoverToken eq token)?.toBO()
 
     override suspend fun saveRecoverRequest(recover: RecoverBO): Boolean {
         return try {
